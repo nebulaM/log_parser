@@ -66,6 +66,10 @@ class MSGULog(object):
             cls.set_input_params_standard()
         else:
             cls.set_input_params_classic()
+        # check if dir exists is necessary in case
+        # root for OUTPUT_DIR is read-only
+        if not os.path.exists(cls.OUTPUT_DIR):
+            os.makedirs(cls.OUTPUT_DIR)
         cls.common_out_filename = ut.get_parsed_filename(cls.INPUT_DIR, cls.MODULE, None) + '.html'
         cls.common_out_filename = os.path.join(cls.OUTPUT_DIR, cls.common_out_filename)
 
