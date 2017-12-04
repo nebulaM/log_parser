@@ -292,13 +292,18 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
         print tag + 'parser starts'
         self.set_int_mode(tag_next_level)
         crash_dump_reg_list = self.get_reg_val_list(tag_next_level, self.LOG_HEADER, self.LOG_ENDING, self.BYTE_PER_REG)
-        
+
+        if not crash_dump_reg_list:
+            print tag + 'parser ends, no log for this section'
+            return False
+
         queue_list = self.init_queues(crash_dump_reg_list, self.DEBUG_MODE)
         queue_list = self.get_reg_meaning(tag_next_level, queue_list, self.DEBUG_MODE)
 
         self.save_result(tag_next_level, queue_list, self.first_enabled_q, standalone)
 
         print tag + 'parser ends'
+        return True
 
 class HQA_Q(cm.HQA_WORD):
     def __init__(self, qid, q_mode, q_type, addr_offset, hqa_int_mode):

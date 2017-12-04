@@ -277,12 +277,19 @@ class HWALog(cm.MSGULog):
             self.set_input_params()
         tag, tag_next_level = ut.get_debug_tags(None, self.MODULE, self.SECTION, 'run')
         print tag + 'parser starts'
-        definition_reg_list = self.get_def_list()
         crash_dump_reg_list = self.get_reg_val_list(tag_next_level, self.LOG_HEADER, self.LOG_ENDING, self.BYTE_PER_REG)
+        
+        if not crash_dump_reg_list:
+            print tag + 'parser ends, no log for this section'
+            return False
+
+        definition_reg_list = self.get_def_list()
+
         decoded_reg_dict = self.get_reg_meaning(tag_next_level, crash_dump_reg_list, definition_reg_list)
         self.save_result(tag_next_level, decoded_reg_dict, standalone)
 
         print tag + 'parser ends'
+        return True
 
 # if entry point is this script, then run this script independently from other parsers.
 if __name__ == '__main__':

@@ -103,10 +103,15 @@ class FWLog(cm.MSGULog):
             self.set_input_params()
         tag, tag_next_level = ut.get_debug_tags(None, self.MODULE, self.SECTION, 'run')
         print tag + 'parser starts'
-        definition_list = ut.create_def_list_from_logh(tag_next_level, self.DEFINITION_FILE_DIR, \
-        self.LOG_ENTRY_PREFIX, self.DEBUG_MODE)
         line_list = ut.save_line_to_list(tag_next_level, self.LOG_HEADER, self.LOG_ENDING, \
         self.INPUT_DIR, self.LOG_LINE_LENGTH)
+        definition_list = ut.create_def_list_from_logh(tag_next_level, self.DEFINITION_FILE_DIR, \
+        self.LOG_ENTRY_PREFIX, self.DEBUG_MODE)
+
+        if not line_list:
+            print tag + 'parser ends without finding log for this section'
+            return False
+
         trans_list_time = []
         trans_list_log = []
         for line in line_list:
@@ -172,6 +177,7 @@ class FWLog(cm.MSGULog):
         self.log_start_idx = None
         self.clk_freq = None
         print tag + 'parser ends'
+        return True
 
 if __name__ == '__main__':
     this = FWLog()

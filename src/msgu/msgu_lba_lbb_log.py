@@ -809,21 +809,31 @@ class LBALBBLog(cm.MSGULog):
         tag, tag_next_level = ut.get_debug_tags(None, self.MODULE, self.SECTION, 'run')
         print tag + 'parser starts'
         # LBA section
-        lba_def_iu_dict = self.get_def_iu_dict(tag_next_level, self.LBA_DEFINITION_IU_DIR, self.DEBUG_MODE)
-        lba_admin_func_code_dict = self.get_def_iu_dict(tag_next_level, self.LBA_DEFINITION_FUNC_DIR, self.DEBUG_MODE)
         lba_crash_dump_reg_list = self.get_reg_val_list(tag_next_level, self.LBA_LOG_HEADER, self.LBA_LOG_ENDING, self.BYTE_PER_REG)
-        lba_decoded_iu_list = self.get_reg_meaning(tag_next_level, lba_crash_dump_reg_list, self.LBA_ADDRESS_OFFSET, \
-        lba_def_iu_dict, lba_admin_func_code_dict, self.DEBUG_MODE)
+        if not lba_crash_dump_reg_list:
+            pass
+        else:
+            lba_def_iu_dict = self.get_def_iu_dict(tag_next_level, self.LBA_DEFINITION_IU_DIR, self.DEBUG_MODE)
+            lba_admin_func_code_dict = self.get_def_iu_dict(tag_next_level, self.LBA_DEFINITION_FUNC_DIR, self.DEBUG_MODE)
+            lba_decoded_iu_list = self.get_reg_meaning(tag_next_level, lba_crash_dump_reg_list, self.LBA_ADDRESS_OFFSET, \
+            lba_def_iu_dict, lba_admin_func_code_dict, self.DEBUG_MODE)
         
         # LBB section
-        lbb_def_iu_dict = self.get_def_iu_dict(tag_next_level, self.LBB_DEFINITION_IU_DIR, self.DEBUG_MODE)
         lbb_crash_dump_reg_list = self.get_reg_val_list(tag_next_level, self.LBB_LOG_HEADER, self.LBB_LOG_ENDING, self.BYTE_PER_REG)
-        lbb_decoded_iu_list = self.get_reg_meaning(tag_next_level, lbb_crash_dump_reg_list, self.LBB_ADDRESS_OFFSET, \
-        lbb_def_iu_dict, None, self.DEBUG_MODE)
+        if not lbb_crash_dump_reg_list and not lba_crash_dump_reg_list:
+            print tag + 'parser ends, no log for this section'
+            return False
+        elif not lbb_crash_dump_reg_list:
+            pass
+        else:    
+            lbb_def_iu_dict = self.get_def_iu_dict(tag_next_level, self.LBB_DEFINITION_IU_DIR, self.DEBUG_MODE)
+            lbb_decoded_iu_list = self.get_reg_meaning(tag_next_level, lbb_crash_dump_reg_list, self.LBB_ADDRESS_OFFSET, \
+            lbb_def_iu_dict, None, self.DEBUG_MODE)
 
         # save both LBA and LBB result
         self.save_result(tag_next_level, lba_decoded_iu_list, lbb_decoded_iu_list, standalone)
         print tag + 'parser ends'
+        return True
 
 # if entry point is this script, then run this script independently from other parsers.
 if __name__ == '__main__':
