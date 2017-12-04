@@ -109,7 +109,7 @@ class FWLog(cm.MSGULog):
         self.LOG_ENTRY_PREFIX, self.DEBUG_MODE)
 
         if not line_list:
-            print tag + 'parser ends without finding log for this section'
+            print tag + 'parser ends, no log for this section'
             return False
 
         trans_list_time = []
