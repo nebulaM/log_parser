@@ -55,6 +55,8 @@ class MSGULog(object):
     @classmethod
     def set_input_params(cls):
         flag_use_standard = False
+        if len(sys.argv) <= 1:
+            cls.set_input_params_standard()
         if sys.argv[1] == '-h' or sys.argv[1] == '--help':
             flag_use_standard = True
         else:
@@ -78,12 +80,13 @@ class MSGULog(object):
         parser = argparse.ArgumentParser()
         parser.add_argument("-i", "--input", help="path to input crash dump", required=True)
         parser.add_argument("-o", "--out", help="path to output folder for result", default=cls.OUTPUT_DIR)
-        parser.add_argument("-d", "--debug", help="set to true to enable additional log", default=False)
+        parser.add_argument("-d", "--debug", help="enable additional log", dest='debug_mode', action='store_true')
+        parser.set_defaults(debug_mode=False)
         args = parser.parse_args()
         if os.path.isfile(args.input):
             cls.INPUT_DIR = args.input
             cls.OUTPUT_DIR = args.out
-            cls.DEBUG_MODE = args.debug
+            cls.DEBUG_MODE = args.debug_mode
         else:
             parser.print_help()
             sys.exit(1)
