@@ -101,16 +101,18 @@ class FWLog(cm.MSGULog):
     def run(self, standalone=True):
         if standalone is True:
             self.set_input_params()
+
         tag, tag_next_level = ut.get_debug_tags(None, self.MODULE, self.SECTION, 'run')
         print tag + 'parser starts'
+
         line_list = ut.save_line_to_list(tag_next_level, self.LOG_HEADER, self.LOG_ENDING, \
         self.INPUT_DIR, self.LOG_LINE_LENGTH)
-        definition_list = ut.create_def_list_from_logh(tag_next_level, self.DEFINITION_FILE_DIR, \
-        self.LOG_ENTRY_PREFIX, self.DEBUG_MODE)
-
         if not line_list:
             print tag + 'parser ends, no log for this section'
             return False
+
+        definition_list = ut.create_def_list_from_logh(tag_next_level, self.DEFINITION_FILE_DIR, \
+        self.LOG_ENTRY_PREFIX, self.DEBUG_MODE)
 
         trans_list_time = []
         trans_list_log = []
@@ -176,9 +178,11 @@ class FWLog(cm.MSGULog):
         # set vars read from crash dump back to none after finish
         self.log_start_idx = None
         self.clk_freq = None
+
         print tag + 'parser ends'
         return True
 
+# if entry point is this script, then run this script independently from other parsers.
 if __name__ == '__main__':
     this = FWLog()
     this.run()

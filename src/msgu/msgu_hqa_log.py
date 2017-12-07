@@ -290,9 +290,9 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
         
         tag, tag_next_level = ut.get_debug_tags(None, self.MODULE, self.SECTION, 'run')
         print tag + 'parser starts'
+
         self.set_int_mode(tag_next_level)
         crash_dump_reg_list = self.get_reg_val_list(tag_next_level, self.LOG_HEADER, self.LOG_ENDING, self.BYTE_PER_REG)
-
         if not crash_dump_reg_list:
             print tag + 'parser ends, no log for this section'
             return False

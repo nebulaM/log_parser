@@ -807,7 +807,9 @@ class LBALBBLog(cm.MSGULog):
         if standalone is True:
             self.set_input_params()
         tag, tag_next_level = ut.get_debug_tags(None, self.MODULE, self.SECTION, 'run')
+
         print tag + 'parser starts'
+
         # LBA section
         lba_crash_dump_reg_list = self.get_reg_val_list(tag_next_level, self.LBA_LOG_HEADER, self.LBA_LOG_ENDING, self.BYTE_PER_REG)
         if not lba_crash_dump_reg_list:
@@ -832,6 +834,7 @@ class LBALBBLog(cm.MSGULog):
 
         # save both LBA and LBB result
         self.save_result(tag_next_level, lba_decoded_iu_list, lbb_decoded_iu_list, standalone)
+
         print tag + 'parser ends'
         return True
 
