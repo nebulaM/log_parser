@@ -41,4 +41,4 @@ if __name__ == '__main__':
         print 'If this is the case, then please click the button saying "Allow blocked content" on that dialog box.'
     else:
         print 'Found no log for ' + parser
-        os.remove(msgu_common.MSGULog().common_out_filename) 
+        os.remove(msgu_common.MSGULog().common_out_filename)

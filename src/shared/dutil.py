@@ -230,16 +230,25 @@ def get_scsi_code_dict(tag, section, def_file_dir, verbose=False):
     return scsi_code_dict
 
 def save_line_to_list(tag, header, ending, crash_dump_dir, line_length):
-    ''' Save lines that are under this section from crash dump to a list.
+    ''' Save register dump under this section to a list.
         @params tag: tag from caller
         @params header
         @params ending
         @params crash_dump_dir: dir to crash dump
-        @params line_length: how long an expected line in this crash dump section is.
+        @params line_length: how long an expected line in this crash dump section is
 		@return line_list: list of lines of reg_addr reg_val
     '''
     tag, tag_next_level = get_debug_tags(tag, MODULE_NAME, None, 'save_line_to_list')
-    timestamp = re.compile('^([0-9]{4})-([0-1]{1}[0-9]{1})-')
+
+    # list of regexp tokens to be removed in a line goes here
+    re_token_to_rm_list = []
+    # timestamp may appears in register dump, such as '2017-09-09 12:57:23'
+    re_token_to_rm_list.append(re.compile('([0-9]{4})-([0-1]{1}[0-9]{1})-([0-3]{1}[0-9]{1})(\s?)(([0-9]{2}:){2})([0-9]{2})'))
+
+    # RS heartbeat and BC log can appear in dump
+    re_token_to_rm_list.append(re.compile('Heartbeat wasn\'t running. delta=[0-9]+ seconds'))
+    re_token_to_rm_list.append(re.compile('(\(BC:[0-9]+\) )([0-9A-Z]+:).*'))
+
     line_list = []
 
     # Get full crash dump so we can search magu fw log from it
@@ -289,7 +298,15 @@ def save_line_to_list(tag, header, ending, crash_dump_dir, line_length):
             pre_line = ''
             continue
         # empty line in crash dump is ignored, date stamp such as '2017-09-09 12:57:19' is ignored
-        if line != '' and timestamp.search(line) is None and line != header and line != ending:
+        if line != '' and line != header and line != ending:
+
+            # remove undesired tokens
+            for re_token_rm in re_token_to_rm_list:
+                line = re_token_rm.sub('', line)
+            # do not use "line.strip()" because whitespace may from last line and can affect line length
+            if line == '':
+                continue
+
             # only add a line to line_list if the line belongs to the section defined
             # by header and ending
             if flag_process_line is True:
@@ -406,7 +423,7 @@ def crash_dump_line_to_addr_val_pair(tag, crash_dump_line, endianness, byte_per_
         @param endianness: 'little' or 'big'
         @param byte_per_reg: how many bytes are stored statring at this register address
         @param byte_per_val: how many bytes are stored in one value
-        @paramval_per_line: how many values on this line
+        @param val_per_line: how many values on this line
         @param verbose
         @return: list of "regAddr-regValue" pair, where the first reg_addr in the list is [first_reg_addr]
         @note:
