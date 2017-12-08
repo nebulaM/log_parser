@@ -146,22 +146,22 @@ class MSGULog(object):
     @classmethod
     def get_reg_val_list(cls, tag, header, ending, byte_per_reg):
         tag, tag_next_level = ut.get_debug_tags(tag, cls.MODULE, cls.SECTION, 'get_reg_val_list')
-        crash_dump_reg_list = []
+        reg_list = []
         lines = ut.save_line_to_list(tag_next_level, header, ending, \
         cls.INPUT_DIR, cls.LOG_LINE_LENGTH)
         for line in lines:
             # we have 8-byte(64-bit) stored per register address, each value splited by whitespace is 4-byte(32-bit).
             # And there are 1 register address and 8 values per line
-            this_line_list = ut.crash_dump_line_to_addr_val_pair(tag_next_level, line, cls.ENDIANNESS, byte_per_reg, cls.BYTE_PER_VAL, cls.VAL_PER_LINE)
+            this_line_list = ut.reg_dump_line_to_addr_val_pair(tag_next_level, line, cls.ENDIANNESS, byte_per_reg, cls.BYTE_PER_VAL, cls.VAL_PER_LINE)
 
-            crash_dump_reg_list.extend(this_line_list)
+            reg_list.extend(this_line_list)
         if cls.DEBUG_MODE is True:
             print tag + '[reg address] [reg value] after processing crash dump:'
             addr_formater = '{:0%dx}' % (cls.BYTE_PER_VAL << 1)
             val_formater = '{:0%dx}' % (byte_per_reg << 1)
-            for reg_addr, reg_val in crash_dump_reg_list:
+            for reg_addr, reg_val in reg_list:
                 print addr_formater.format(reg_addr) + ' ' + ' ' + val_formater.format(reg_val)
-        return crash_dump_reg_list
+        return reg_list
 
 class HQA_WORD(object):
     # The following vars are string used in MSGU parsers 

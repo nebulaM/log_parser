@@ -28,15 +28,15 @@ class FWLog(cm.MSGULog):
         self.log_start_idx = None
         self.clk_freq = None
     @classmethod
-    def _process_line(cls, tag, crash_dump_line, definition_list, verbose=False):
+    def _process_line(cls, tag, reg_dump_line, definition_list, verbose=False):
         tag = ut.get_debug_tags(tag, cls.MODULE, cls.SECTION, 'process_line')[0]
-        log_word_list = crash_dump_line.split()
+        log_word_list = reg_dump_line.split()
         # remove last element because last element is an extra whitespace after spliting the list
         if log_word_list[-1] is ' ':
             log_word_list.pop()
 
         if len(log_word_list) < 4:
-            print tag + 'log_word_list ' + crash_dump_line + \
+            print tag + 'log_word_list ' + reg_dump_line + \
             ' too short, return without processing this line'
             return [None, None]
         if len(log_word_list) >= 9 \
@@ -44,7 +44,7 @@ class FWLog(cm.MSGULog):
             and log_word_list[8] == cls.LOG_FIRST_LINE_WORD_8:
             log_start_idx = int(log_word_list[4], 16)
             clk_freq = int(log_word_list[5], 16)
-            ut.log(tag + 'translate first line: ' + crash_dump_line + ' in MSGU FW Log:', verbose)
+            ut.log(tag + 'translate first line: ' + reg_dump_line + ' in MSGU FW Log:', verbose)
             ut.log(tag + 'start index is ' + str(log_start_idx) + \
             ', clock frequency is ' + str(clk_freq) + 'Hz', verbose)
             return [log_start_idx, clk_freq]
@@ -53,13 +53,13 @@ class FWLog(cm.MSGULog):
         if cls.re_is_fw_log_token.search(raw_key):
             idx = int(raw_key[4:], 16)
             if idx < 0 or idx >= len(definition_list):
-                return time_tick, crash_dump_line + ' meaning of the log not found.'
+                return time_tick, reg_dump_line + ' meaning of the log not found.'
             definition_line = definition_list[idx]
             trans_line = ut.replace_word_in_line_from_logh(log_word_list, \
             cls.LOG_FIRST_WORD_IDX, definition_line)
             if verbose is True:
                 print tag + 'translate line before:'
-                print tag + crash_dump_line + '\n'
+                print tag + reg_dump_line + '\n'
                 print tag + 'translate line after:'
                 print trans_line + '\n'
             return time_tick, trans_line
@@ -70,7 +70,7 @@ class FWLog(cm.MSGULog):
             # log_word_list[1:end]
             for this_word in log_word_list[1:-1]:
                 if '00000000' != this_word: 
-                    return time_tick, crash_dump_line + ' is not a valid MSGU FW log.'
+                    return time_tick, reg_dump_line + ' is not a valid MSGU FW log.'
             return None, None
 
     @classmethod

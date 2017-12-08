@@ -166,7 +166,7 @@ class HWALog(cm.MSGULog):
         return reg_list
 
     @classmethod
-    def get_reg_meaning(cls, tag, crash_dump_reg_list, definition_list):
+    def get_reg_meaning(cls, tag, reg_list, definition_list):
         tag, tag_next_level = ut.get_debug_tags(tag, cls.MODULE, cls.SECTION, 'get_reg_meaning')
         # q_expand token is special for HWA, other sections should not use this token
         re_q_expand_token = re.compile('@PARSE_([IO]B(IX)?)_Q_EXPAND@')
@@ -177,7 +177,7 @@ class HWALog(cm.MSGULog):
         spec_ib_w_access = False
         spec_ob_r_access = False
         spec_ob_w_access = False
-        for reg_addr, reg_val in crash_dump_reg_list:
+        for reg_addr, reg_val in reg_list:
             # calc by addr in PD's HWA standalone doc, becasue def xml file stores that addr.
             reg_addr_hwa = reg_addr - hwa_addr_offset
 
@@ -278,14 +278,14 @@ class HWALog(cm.MSGULog):
         tag, tag_next_level = ut.get_debug_tags(None, self.MODULE, self.SECTION, 'run')
 
         print tag + 'parser starts'
-        crash_dump_reg_list = self.get_reg_val_list(tag_next_level, self.LOG_HEADER, self.LOG_ENDING, self.BYTE_PER_REG)
-        if not crash_dump_reg_list:
+        reg_list = self.get_reg_val_list(tag_next_level, self.LOG_HEADER, self.LOG_ENDING, self.BYTE_PER_REG)
+        if not reg_list:
             print tag + 'parser ends, no log for this section'
             return False
 
         definition_reg_list = self.get_def_list()
 
-        decoded_reg_dict = self.get_reg_meaning(tag_next_level, crash_dump_reg_list, definition_reg_list)
+        decoded_reg_dict = self.get_reg_meaning(tag_next_level, reg_list, definition_reg_list)
         self.save_result(tag_next_level, decoded_reg_dict, standalone)
 
         print tag + 'parser ends'

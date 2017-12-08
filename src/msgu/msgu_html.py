@@ -19,7 +19,7 @@ def get_script():
 def get_common_scripts():
     return ''.join([get_stylesheet(), get_script()])
 
-def get_hwa_standalone_header(crash_dump_dir):
+def get_hwa_standalone_header(input_filename):
     css = get_stylesheet()
     return '''<!DOCTYPE html>
     <html lang="en">
@@ -49,7 +49,7 @@ def get_hwa_standalone_header(crash_dump_dir):
     <p style="color:red;">%s</p>
     <h3>MSGU HWA REG</h3>
     <p>The following table contains decoded register dump from crash dump for MSGU HWA register section:</p>\n''' \
-    % (css, crash_dump_dir)
+    % (css, input_filename)
 
 def get_hwa_standalone_ending():
     return \
@@ -141,7 +141,7 @@ def get_hqa_nav_tab(queue_list):
     </li>
   </ul>''' % (ib_admin, ib_oper, ob_admin, ob_oper)
 
-def get_hqa_standalone_header(crash_dump_dir, queue_list, first_enabled_q):
+def get_hqa_standalone_header(input_filename, queue_list, first_enabled_q):
     common_scripts = get_common_scripts()
     hqa_script = get_hqa_hide_tbl_script(first_enabled_q)
     hqa_nav_tab = get_hqa_nav_tab(queue_list)
@@ -175,7 +175,7 @@ def get_hqa_standalone_header(crash_dump_dir, queue_list, first_enabled_q):
   <h3 id="msgu_hqa_reg">MSGU HQA REG</h3>
   <p style="color:red;">Click on a tab to select a Q, <span style="color:green;"><b>Green Qs</b></span> are enabled, <span style="color:grey;"><b>GREY Qs</b></span> are disabled.</p>
   %s
-  </div>\n''' % (common_scripts, hqa_script, crash_dump_dir, hqa_nav_tab))
+  </div>\n''' % (common_scripts, hqa_script, input_filename, hqa_nav_tab))
 
 def get_hqa_standalone_ending():
     return \
@@ -197,7 +197,7 @@ def get_hqa_tbl_header(q, first_enabled_q):
 def get_hqa_tbl_ending():
     return '  </div>\n'
 
-def get_lba_lbb_standalone_header(crash_dump_dir):
+def get_lba_lbb_standalone_header(input_filename):
     css = get_stylesheet()
     return '''<!DOCTYPE html>
     <html lang="en">
@@ -232,7 +232,7 @@ def get_lba_lbb_standalone_header(crash_dump_dir):
     <p style="color:red;">%s</p>
     <h3>MSGU LBA and LBB MEM</h3>
     <p>The following IU(s) are decoded from LBA and LBB memory:</p>\n''' \
-    % (css, crash_dump_dir)
+    % (css, input_filename)
 
 def get_lba_lbb_standalone_ending():
     return \
@@ -262,7 +262,7 @@ def get_hide_section_scripts(section_list):
         scripts = ''.join([scripts, get_hide_section_script(section)])
     return scripts
 
-def get_top_level_header(crash_dump_dir):
+def get_top_level_header(input_filename):
     common_scripts = get_common_scripts()
     sections = ['msgu_fw_log', 'msgu_hwa_reg', 'msgu_hqa_reg', 'msgu_lba_lbb_mem']
     hide_sec_scripts = get_hide_section_scripts(sections)
@@ -318,7 +318,7 @@ def get_top_level_header(crash_dump_dir):
 <p style="color:red;">%s</p>
 %s
 <p style="color:red;">Internet Explore may not correctly display the result, consider using a modern browser, such as Microsoft Edge or Google Chrome.</p>
-</div>''' % (common_scripts, hide_sec_scripts, crash_dump_dir, click_link)
+</div>''' % (common_scripts, hide_sec_scripts, input_filename, click_link)
 
 def get_top_level_ending():
      return \

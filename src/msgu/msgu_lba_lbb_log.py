@@ -160,7 +160,7 @@ class LBALBBLog(cm.MSGULog):
             print 'special_handler_admin_iu_func_code_0x00: Warning, register 0x{:02x} not found'.format(sgl_des_reg_addr)
 
     @classmethod
-    def special_reg_list_handler_spanning_iu(cls, tag, start_addr, addr_offset, crash_dump_reg_list, verbose=False):
+    def special_reg_list_handler_spanning_iu(cls, tag, start_addr, addr_offset, reg_list, verbose=False):
         reg_addr_val_for_this_iu = []
         flag_start_list = False
         iu_buf_size = cls.IU_BUF_SIZE
@@ -172,8 +172,8 @@ class LBALBBLog(cm.MSGULog):
         # loop through crash dump list and find out 
         # the registers belong to this spanning iu
         # the result is saved in reg_addr_val_for_this_iu
-        while idx < len(crash_dump_reg_list):
-            reg_addr, reg_val = crash_dump_reg_list[idx]
+        while idx < len(reg_list):
+            reg_addr, reg_val = reg_list[idx]
             reg_addr -= addr_offset
             if reg_addr == start_addr:
                 flag_start_list = True
@@ -184,7 +184,7 @@ class LBALBBLog(cm.MSGULog):
                 # the rest of registers in IU buffer are not
                 # used by spanning iu
                 for useful_reg_idx_offset in range(useful_regs_per_iu_buf):
-                    reg_addr, reg_val = crash_dump_reg_list[idx + useful_reg_idx_offset]
+                    reg_addr, reg_val = reg_list[idx + useful_reg_idx_offset]
                     reg_addr -= addr_offset
                     reg_addr_val_for_this_iu.append([reg_addr, reg_val])
                 idx += iu_buf_size/cls.BYTE_PER_REG
@@ -204,7 +204,7 @@ class LBALBBLog(cm.MSGULog):
 
 
     @classmethod
-    def get_reg_meaning(cls, tag, crash_dump_reg_list, addr_offset, def_iu_dict, admin_func_code_dict, verbose=False):
+    def get_reg_meaning(cls, tag, reg_list, addr_offset, def_iu_dict, admin_func_code_dict, verbose=False):
         tag, tag_next_level = ut.get_debug_tags(tag, cls.MODULE, cls.SECTION, 'get_reg_meaning')
         iu_size = cls.IU_SIZE
         iu_buf_size = cls.IU_BUF_SIZE
@@ -224,7 +224,7 @@ class LBALBBLog(cm.MSGULog):
         # Last address belongs to current iu
         last_addr_for_curr_iu = (count + 1) * iu_buf_size - cls.BYTE_PER_REG
         flag_start_list = False
-        for reg_addr, reg_val in crash_dump_reg_list:
+        for reg_addr, reg_val in reg_list:
             # Substract offset for easy debugging
             reg_addr = reg_addr - addr_offset
             if reg_addr == start_addr and reg_val == 0:
@@ -234,7 +234,7 @@ class LBALBBLog(cm.MSGULog):
                 length = ut.bit_shift(reg_val, '31:16')[0]
                 # Rewrite this if statement once spanning is fixed in log and uses the full buffer size
                 if length > iu_spanning_threshold:
-                    list_of_ius.append(cls.special_reg_list_handler_spanning_iu(tag_next_level, start_addr, addr_offset, crash_dump_reg_list))
+                    list_of_ius.append(cls.special_reg_list_handler_spanning_iu(tag_next_level, start_addr, addr_offset, reg_list))
                     # Spanning can take more than one iu buffer,
                     # so end_addr for this iu is calculated as follows.
                     # Note that once spanning is fixed in log, we should divide
@@ -811,25 +811,25 @@ class LBALBBLog(cm.MSGULog):
         print tag + 'parser starts'
 
         # LBA section
-        lba_crash_dump_reg_list = self.get_reg_val_list(tag_next_level, self.LBA_LOG_HEADER, self.LBA_LOG_ENDING, self.BYTE_PER_REG)
-        if not lba_crash_dump_reg_list:
+        lba_reg_list = self.get_reg_val_list(tag_next_level, self.LBA_LOG_HEADER, self.LBA_LOG_ENDING, self.BYTE_PER_REG)
+        if not lba_reg_list:
             pass
         else:
             lba_def_iu_dict = self.get_def_iu_dict(tag_next_level, self.LBA_DEFINITION_IU_DIR, self.DEBUG_MODE)
             lba_admin_func_code_dict = self.get_def_iu_dict(tag_next_level, self.LBA_DEFINITION_FUNC_DIR, self.DEBUG_MODE)
-            lba_decoded_iu_list = self.get_reg_meaning(tag_next_level, lba_crash_dump_reg_list, self.LBA_ADDRESS_OFFSET, \
+            lba_decoded_iu_list = self.get_reg_meaning(tag_next_level, lba_reg_list, self.LBA_ADDRESS_OFFSET, \
             lba_def_iu_dict, lba_admin_func_code_dict, self.DEBUG_MODE)
         
         # LBB section
-        lbb_crash_dump_reg_list = self.get_reg_val_list(tag_next_level, self.LBB_LOG_HEADER, self.LBB_LOG_ENDING, self.BYTE_PER_REG)
-        if not lbb_crash_dump_reg_list and not lba_crash_dump_reg_list:
+        lbb_reg_list = self.get_reg_val_list(tag_next_level, self.LBB_LOG_HEADER, self.LBB_LOG_ENDING, self.BYTE_PER_REG)
+        if not lbb_reg_list and not lba_reg_list:
             print tag + 'parser ends, no log for this section'
             return False
-        elif not lbb_crash_dump_reg_list:
+        elif not lbb_reg_list:
             pass
-        else:    
+        else:
             lbb_def_iu_dict = self.get_def_iu_dict(tag_next_level, self.LBB_DEFINITION_IU_DIR, self.DEBUG_MODE)
-            lbb_decoded_iu_list = self.get_reg_meaning(tag_next_level, lbb_crash_dump_reg_list, self.LBB_ADDRESS_OFFSET, \
+            lbb_decoded_iu_list = self.get_reg_meaning(tag_next_level, lbb_reg_list, self.LBB_ADDRESS_OFFSET, \
             lbb_def_iu_dict, None, self.DEBUG_MODE)
 
         # save both LBA and LBB result

@@ -421,10 +421,10 @@ def register_walk(first_reg_addr, byte_per_reg, val_per_reg, endianness, log_wor
             reg_addr = pair_list[-1][0] + byte_per_reg                
     return pair_list
 
-def crash_dump_line_to_addr_val_pair(tag, crash_dump_line, endianness, byte_per_reg, byte_per_val, val_per_line, verbose=False):
+def reg_dump_line_to_addr_val_pair(tag, reg_dump_line, endianness, byte_per_reg, byte_per_val, val_per_line, verbose=False):
     ''' Generate a [list] of "regAddr-regValue" pairs from [log_word_list], according to given params
         @param tag: tag from caller
-        @param crash_dump_line: a line of hex code from crash dump's register dump
+        @param reg_dump_line: a line of hex code from crash dump's register dump
         @param endianness: 'little' or 'big'
         @param byte_per_reg: how many bytes are stored statring at this register address
         @param byte_per_val: how many bytes are stored in one value
@@ -436,20 +436,20 @@ def crash_dump_line_to_addr_val_pair(tag, crash_dump_line, endianness, byte_per_
             2. Do not try crazy numbers for byte_per_reg byte_per_val that does not make sense, such as byte_per_reg=5
         Example:
         set line "bf6b3100: 0029b1c0 00000002 22222222 12345678 0002004a aaaaaaaa 88888888 99999999 "
-        1. crash_dump_line_to_addr_val_pair "example 1" $line 'little' 8 4 8 <- [8] byte per reg, 4 byte per value, 8 values      
+        1. reg_dump_line_to_addr_val_pair "example 1" $line 'little' 8 4 8 <- [8] byte per reg, 4 byte per value, 8 values      
             output is: bf6b3100 000000020029b1c0 bf6b3108 1234567822222222 bf6b3110 aaaaaaaa0002004a bf6b3118 9999999988888888  
 
-        2. crash_dump_line_to_addr_val_pair "example 2" $line 'big' 8 4 8 <- [big] endian  
+        2. reg_dump_line_to_addr_val_pair "example 2" $line 'big' 8 4 8 <- [big] endian  
             output is: bf6b3100 0029b1c000000002 bf6b3108 2222222212345678 bf6b3110 0002004aaaaaaaaa bf6b3118 8888888899999999
 
-        3. crash_dump_line_to_addr_val_pair "example 3" $line 'little' 16 4 8 <- [16] byte per reg, 4 byte per value, 8 values
+        3. reg_dump_line_to_addr_val_pair "example 3" $line 'little' 16 4 8 <- [16] byte per reg, 4 byte per value, 8 values
             output is: bf6b3100 1234567822222222000000020029b1c0 bf6b3108 9999999988888888aaaaaaaa0002004a
 
-        4. crash_dump_line_to_addr_val_pair "example 4" $line 'little' 4 4 8 <- [4] byte per reg, 4 byte per value, 8 values 
+        4. reg_dump_line_to_addr_val_pair "example 4" $line 'little' 4 4 8 <- [4] byte per reg, 4 byte per value, 8 values 
             output is: bf6b3100 0029b1c0 bf6b3104 00000002 bf6b3108 22222222 bf6b310c 12345678 bf6b3110 0002004a bf6b3114 aaaaaaaa bf6b3118 88888888 bf6b311c 99999999
 
         set line "bf6b3100: 0029 0030 0000 1111 2222 3333 1234 5678 0002 004a abcd efba aeae eaff cccc ffff " 
-        5. crash_dump_line_to_addr_val_pair "example 5" $line 'little' 8 2 16 <- 8 byte per reg, [2] byte per value, 16 values
+        5. reg_dump_line_to_addr_val_pair "example 5" $line 'little' 8 2 16 <- 8 byte per reg, [2] byte per value, 16 values
         output is: bf6b3100 1111000000300029 bf6b3108 5678123433332222 bf6b3110 efbaabcd004a0002 bf6b3118 ffffcccceaffaeae
     '''
 
@@ -458,14 +458,14 @@ def crash_dump_line_to_addr_val_pair(tag, crash_dump_line, endianness, byte_per_
     if val_per_reg <= 0:
         raise ValueError(tag + 'val_per_reg/byte_per_val) must > 0')
     # remove whitespace at end of the line
-    crash_dump_line = crash_dump_line.rstrip()
-    log_word_list = crash_dump_line.split()
+    reg_dump_line = reg_dump_line.rstrip()
+    log_word_list = reg_dump_line.split()
     if verbose is True:
         print_list(log_word_list)
     # first value is a reg address
     act_val_per_line = len(log_word_list) -1
     if act_val_per_line != val_per_line:
-        print tag + 'Warning, line ' + crash_dump_line + ' has ', act_val_per_line, 'register values splited by whitespace.'
+        print tag + 'Warning, line ' + reg_dump_line + ' has ', act_val_per_line, 'register values splited by whitespace.'
         print 'This line will not be translated.'
         return []
 
@@ -474,7 +474,7 @@ def crash_dump_line_to_addr_val_pair(tag, crash_dump_line, endianness, byte_per_
     try:
         first_reg_addr = int(first_reg_addr, 16)
     except ValueError:
-        print tag + 'Warning, line ' + crash_dump_line + 'first word is not a valid register address'
+        print tag + 'Warning, line ' + reg_dump_line + 'first word is not a valid register address'
         print 'This line will not be translated.'
         return []
     return register_walk(first_reg_addr, byte_per_reg, val_per_reg, endianness, 1, log_word_list)

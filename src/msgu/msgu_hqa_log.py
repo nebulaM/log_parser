@@ -90,7 +90,7 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
         cr_addr_str = '{:08x}'.format(self.LOG_CR_ADDRESS)
         for line in cr_reg_lines:
             if cr_addr_str in line:
-                this_line_list = ut.crash_dump_line_to_addr_val_pair(tag_next_level, line, self.ENDIANNESS, \
+                this_line_list = ut.reg_dump_line_to_addr_val_pair(tag_next_level, line, self.ENDIANNESS, \
                 self.LOG_CR_BYTE_PER_REG, self.BYTE_PER_VAL, self.LOG_CR_VAL_PER_LINE)
                 for reg_addr, reg_val in this_line_list:
                     if reg_addr == self.LOG_CR_ADDRESS and \
@@ -99,7 +99,7 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
                        break
                 break
 
-    def init_queues(self, crash_dump_reg_list, verbose=False):
+    def init_queues(self, reg_list, verbose=False):
         queue_list = []
         for qid in range(0, self.q_num):
             if qid >= self.qid_first_ib_admin and qid <= self.qid_last_ib_admin:
@@ -130,7 +130,7 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
             this_q.reg_lower_bound = offset
             this_q.reg_upper_bound = self.q_reg_per_q + offset - self.BYTE_PER_REG
 
-            for reg_addr, reg_val in crash_dump_reg_list:
+            for reg_addr, reg_val in reg_list:
                 reg_addr -= (self.MSGU_ADDRESS_OFFSET + self.HQA_ADDRESS_OFFSET)
                 if reg_addr < this_q.reg_lower_bound:
                     continue
@@ -292,12 +292,12 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
         print tag + 'parser starts'
 
         self.set_int_mode(tag_next_level)
-        crash_dump_reg_list = self.get_reg_val_list(tag_next_level, self.LOG_HEADER, self.LOG_ENDING, self.BYTE_PER_REG)
-        if not crash_dump_reg_list:
+        reg_list = self.get_reg_val_list(tag_next_level, self.LOG_HEADER, self.LOG_ENDING, self.BYTE_PER_REG)
+        if not reg_list:
             print tag + 'parser ends, no log for this section'
             return False
 
-        queue_list = self.init_queues(crash_dump_reg_list, self.DEBUG_MODE)
+        queue_list = self.init_queues(reg_list, self.DEBUG_MODE)
         queue_list = self.get_reg_meaning(tag_next_level, queue_list, self.DEBUG_MODE)
 
         self.save_result(tag_next_level, queue_list, self.first_enabled_q, standalone)
