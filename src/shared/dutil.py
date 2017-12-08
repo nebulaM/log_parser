@@ -59,7 +59,7 @@ def get_filename(path):
 
 def get_timestamp():
     ''' Get the current timestamp
-        @return: a string of current timestamp
+        @return: a str of current timestamp
                  in [year_month_day_hr_min_sec] format
         @note: Example 2017_10_30_15:01:50
     '''
@@ -229,30 +229,30 @@ def get_scsi_code_dict(tag, section, def_file_dir, verbose=False):
             scsi_code_dict[scsi_code] = scsi_name
     return scsi_code_dict
 
-def save_line_to_list(tag, header, ending, crash_dump_dir, line_length):
-    ''' Save register dump under this section to a list.
+def save_line_to_list(tag, header, ending, filename, line_length):
+    ''' Save lines that are under a section from log to a list.
         @params tag: tag from caller
-        @params header
-        @params ending
-        @params crash_dump_dir: dir to crash dump
-        @params line_length: how long an expected line in this crash dump section is
-		@return line_list: list of lines of reg_addr reg_val
+        @params header: starting line belongs to this section 
+        @params ending: last line belongs to this section
+        @params filename: path to input file
+        @params line_length: how long an expected line is under this section
+		@return line_list: list of lines of reg_addr reg_val, can be empty
     '''
     tag, tag_next_level = get_debug_tags(tag, MODULE_NAME, None, 'save_line_to_list')
 
-    # list of regexp tokens to be removed in a line goes here
+    # regexp tokens to be removed under the section goes here
     re_token_to_rm_list = []
-    # timestamp may appears in register dump, such as '2017-09-09 12:57:23'
+    # timestamp may appear unexpectly, such as '2017-09-09 12:57:23'
     re_token_to_rm_list.append(re.compile('([0-9]{4})-([0-1]{1}[0-9]{1})-([0-3]{1}[0-9]{1})(\s?)(([0-9]{2}:){2})([0-9]{2})'))
 
-    # RS heartbeat and BC log can appear in dump
+    # RS heartbeat and BC log may appear unexpectly
     re_token_to_rm_list.append(re.compile('Heartbeat wasn\'t running. delta=[0-9]+ seconds'))
     re_token_to_rm_list.append(re.compile('(\(BC:[0-9]+\) )([0-9A-Z]+:).*'))
 
     line_list = []
 
     # Get full crash dump so we can search magu fw log from it
-    lines = get_data_from_file(tag_next_level, crash_dump_dir)
+    lines = get_data_from_file(tag_next_level, filename)
 
     # Line number starts from 1(can be set to 0)
     line_num = 1
@@ -356,16 +356,21 @@ def save_line_to_list(tag, header, ending, crash_dump_dir, line_length):
     return line_list
 
 def register_walk(first_reg_addr, byte_per_reg, val_per_reg, endianness, log_word_list_idx, log_word_list):
-    ''' Generate a [list] of "regAddr-regValue" pairs from [log_word_list], according to given params
+    ''' Generate a [list] of "regAddr-regValue" pairs from [log_word_list],
+	    according to given params
         @param first_reg_addr: a register address
         @param byte_per_reg: how many bytes are stored statring at this register address
-        @param val_per_reg: how many value/element from the [log_word_list] is stored in one register address
+        @param val_per_reg: how many value/element from the [log_word_list] is stored in
+		                    one register address
         @param endianness: 'little' or 'big'
-        @param log_word_list_idx: the assumption is that starting from [log_word_list_idx] in the [log_word_list],
-                                all elements are valid register values in hex
-        @param log_word_list: list of register values(possible also contains other things, but the assumption is
-                            that starting from [log_word_list_idx], all elements in the list are valid register value).
-        @return: list of "regAddr-regValue" pair, where the first [regAddr] in the list is [first_reg_addr]
+        @param log_word_list_idx: the assumption is that starting from [log_word_list_idx]
+		                          in the [log_word_list], all elements are valid register
+                                  value in hex
+        @param log_word_list: list of register values(possible also contains other things, 
+		                      but the assumption is that starting from [log_word_list_idx], 
+							  all elements in the list are valid register value).
+        @return: list of "regAddr-regValue" pair, where the first [regAddr] in the
+                 list is [first_reg_addr]
     '''
     if endianness != 'big' and endianness != 'little':
         raise AssertionError('In register_walk, expect endianness to be either "big" or "little", but actual endianness is ' + endianness)
@@ -418,13 +423,13 @@ def register_walk(first_reg_addr, byte_per_reg, val_per_reg, endianness, log_wor
 
 def crash_dump_line_to_addr_val_pair(tag, crash_dump_line, endianness, byte_per_reg, byte_per_val, val_per_line, verbose=False):
     ''' Generate a [list] of "regAddr-regValue" pairs from [log_word_list], according to given params
-        @param tag
+        @param tag: tag from caller
         @param crash_dump_line: a line of hex code from crash dump's register dump
         @param endianness: 'little' or 'big'
         @param byte_per_reg: how many bytes are stored statring at this register address
         @param byte_per_val: how many bytes are stored in one value
         @param val_per_line: how many values on this line
-        @param verbose
+        @param verbose: optional, print additional log if True
         @return: list of "regAddr-regValue" pair, where the first reg_addr in the list is [first_reg_addr]
         @note:
             1. byte_per_reg/byte_per_val must be > 0
@@ -648,7 +653,7 @@ def save_decoded_reg_dict_to_html_table(reg_dict, fd, debug=False):
     ''' Save content in reg_dict in to a html table
         @param reg_dict: dict contains all decoded registers
         @param fd: file descriptor to which the result to be saved
-        @param debug: if True, then no color in bit_position cell
+        @param debug: optional, if True, then no color in bit_position cell
     '''
     fd.write('    <table class="table table-bordered">\n        <thead>\n')
     fd.write('        <tr>\n\t\t\t<th>Reg Addr</th>\n\t\t\t<th>Reg Name</th>\n\t\t\t<th>Reg Value</th>\n\t\t\t<th>Decoding</th>\n')
@@ -695,7 +700,7 @@ def save_reg_dump_to_html(reg_list, addr_offset, value_per_line, fd):
         @param addr_offset: register offset to reg_addr in reg_list(if any)
         @param value_per_line: dump how may register value per line
         @param fd: file descriptor to write the result
-        @notes: "wrap" must defined in html header
+        @notes: .wrap must defined in html header
     '''
     idx = 0
     total_count = 0
@@ -719,7 +724,7 @@ def save_reg_hex_dump_to_html(reg_list, addr_offset, value_per_line, fd):
         @param addr_offset: register offset to reg_addr in reg_list(if any)
         @param value_per_line: dump how may register value per line
         @param fd: file descriptor to write the result
-        @notes: "wrap" must defined in html header
+        @notes: .wrap must defined in html header
     '''
     idx = 0
     total_count = 0
