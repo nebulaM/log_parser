@@ -228,7 +228,8 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
                                                 add '\n' to split lines, this is useful to
                                                 split meanings with 'When set to logic'
                                             '''
-                                            bit_meaning = ''.join([bit_meaning, p.text, '\n'])
+                                            if p.text is not None:
+                                                bit_meaning = ''.join([bit_meaning, p.text, '\n'])
                                 bit_val, bit_val_str = ut.bit_shift(decoded_reg.reg_val, bit_pos)
                                 if cls.re_logic.search(bit_meaning) is not None:
                                     bit_meaning = ut.handle_logic_token(bit_val_str, bit_meaning)

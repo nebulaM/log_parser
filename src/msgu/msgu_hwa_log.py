@@ -148,7 +148,8 @@ class HWALog(cm.MSGULog):
                                 add '\n' to split lines, this is useful to
                                 split meanings with 'When set to logic'
                             '''
-                            bit_meaning = ''.join([bit_meaning, p.text, '\n'])
+                            if p.text is not None:
+                                bit_meaning = ''.join([bit_meaning, p.text, '\n'])
                     #print bit_pos
                     #print bit_name
                     #print bit_meaning
