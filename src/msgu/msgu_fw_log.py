@@ -86,9 +86,9 @@ class FWLog(cm.MSGULog):
             fd.write(''.join([pre_0, start_idx_msg, pre_1]))
 
         if clk_freq is None:
-            fd.write(''.join([pre_0, 'Clock frequency is unknown, use "tick" as time unit', pre_1, '\n']))
+            fd.write(''.join(['{}Clock frequency is unknown, use "tick" as time unit{}\n'.format(pre_0, pre_1)]))
             for time_tick, log in zip(time_list, log_list):
-                fd.write(time_tick + ' tick: ' + log + '\n')
+                fd.write('{}{} tick: {}{}\n'.format(pre_0, time_tick, log, pre_1))
         else:
             # divide by 10^6 so clkFreq is in MHz
             frequency = clk_freq/1000000
