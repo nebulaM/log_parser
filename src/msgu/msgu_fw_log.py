@@ -1,16 +1,14 @@
 import os
-import sys
 import re
 import src.msgu.msgu_common as cm
 import src.msgu.msgu_html as mhtml
 from ..shared import dutil as ut
-sys.path.append(os.path.dirname(sys.argv[0]))
 
 class FWLog(cm.MSGULog):
     # name of this object
     SECTION = 'fw_log'
     #DEFINITION_FILE_DIR = os.path.join(os.getcwd(), '..', '..', '..' 'msgux', 'pqi', 'src', 'msgu_log.h')
-    DEFINITION_FILE_DIR = os.path.join(cm.MSGULog.INCLUDE_DIR, 'doc', 'msgu', 'msgu_log.h')
+    DEFINITION_FILE_DIR = os.path.join(ut.DumpArgvWorker().INCLUDE_DIR, 'doc', 'msgu', 'msgu_log.h')
     LOG_HEADER = '# MSGU FW Log from DQ location'
     LOG_ENDING = '# HQA Memory'
     # special word on first line of MSGU FW log
@@ -36,17 +34,18 @@ class FWLog(cm.MSGULog):
             log_word_list.pop()
 
         if len(log_word_list) < 4:
-            print tag + 'log_word_list ' + reg_dump_line + \
-            ' too short, return without processing this line'
+            print(tag + 'log_word_list ' + reg_dump_line + \
+            ' too short, return without processing this line')
             return [None, None]
         if len(log_word_list) >= 9 \
             and log_word_list[1] == cls.LOG_FIRST_LINE_WORD_1 \
             and log_word_list[8] == cls.LOG_FIRST_LINE_WORD_8:
             log_start_idx = int(log_word_list[4], 16)
             clk_freq = int(log_word_list[5], 16)
-            ut.log(tag + 'translate first line: ' + reg_dump_line + ' in MSGU FW Log:', verbose)
-            ut.log(tag + 'start index is ' + str(log_start_idx) + \
-            ', clock frequency is ' + str(clk_freq) + 'Hz', verbose)
+            if verbose:
+                print(tag + 'translate first line: ' + reg_dump_line + ' in MSGU FW Log:')
+                print(tag + 'start index is ' + str(log_start_idx) + \
+                ', clock frequency is ' + str(clk_freq) + 'Hz')
             return [log_start_idx, clk_freq]
         raw_key = log_word_list[3]
         time_tick = int(log_word_list[1] + log_word_list[2], 16)
@@ -58,10 +57,10 @@ class FWLog(cm.MSGULog):
             trans_line = ut.replace_word_in_line_from_logh(log_word_list, \
             cls.LOG_FIRST_WORD_IDX, definition_line)
             if verbose is True:
-                print tag + 'translate line before:'
-                print tag + reg_dump_line + '\n'
-                print tag + 'translate line after:'
-                print trans_line + '\n'
+                print(tag + 'translate line before:')
+                print(tag + reg_dump_line + '\n')
+                print(tag + 'translate line after:')
+                print(trans_line + '\n')
             return time_tick, trans_line
         # line is not a valid msgu fw line
         else:
@@ -91,10 +90,10 @@ class FWLog(cm.MSGULog):
                 fd.write('{}{} tick: {}{}\n'.format(pre_0, time_tick, log, pre_1))
         else:
             # divide by 10^6 so clkFreq is in MHz
-            frequency = clk_freq/1000000
+            frequency = clk_freq // 1000000
             fd.write('%sClock frequency is %d MHz%s\n' % (pre_0, frequency, pre_1))
             for time_tick, log in zip(time_list, log_list):
-                time_real = time_tick/frequency
+                time_real = time_tick // frequency
                 time_print = ut.add_mark_to_word(str(time_real), ',', 3)
                 fd.write('%s%s us: %s%s\n' % (pre_0, time_print, log, pre_1))
 
@@ -103,12 +102,12 @@ class FWLog(cm.MSGULog):
             self.set_input_params()
 
         tag, tag_next_level = ut.get_debug_tags(None, self.MODULE, self.SECTION, 'run')
-        print tag + 'parser starts'
+        print(tag + 'parser starts')
 
         line_list = ut.save_line_to_list(tag_next_level, self.LOG_HEADER, self.LOG_ENDING, \
         self.INPUT_DIR, self.LOG_LINE_LENGTH)
         if not line_list:
-            print tag + 'parser ends, no log for this section'
+            print(tag + 'parser ends, no log for this section')
             return False
 
         definition_list = ut.create_def_list_from_logh(tag_next_level, self.DEFINITION_FILE_DIR, \
@@ -143,11 +142,11 @@ class FWLog(cm.MSGULog):
             sorted_trans_list_log = trans_list_log[self.log_start_idx:]
             sorted_trans_list_log.extend(trans_list_log[0:self.log_start_idx])
         if self.DEBUG_MODE is True:
-            print "\nsorted list is:"
+            print("\nsorted list is:")
             for time_tick, log in zip(sorted_trans_list_time, sorted_trans_list_log):
                 time_tick_hex = format(time_tick, '08x')
-                print time_tick_hex + ' time: ' + log
-            print "\n"
+                print(time_tick_hex + ' time: ' + log)
+            print("\n")
         try:
             os.stat(self.OUTPUT_DIR)
         except:
@@ -164,9 +163,9 @@ class FWLog(cm.MSGULog):
             sorted_trans_list_time, sorted_trans_list_log, standalone)
 
             fd.close()
-            print tag + 'result saved in ' + filename
+            print(tag + 'result saved in ' + filename)
         else:
-            fd = open(self.common_out_filename, 'a')
+            fd = open(self.out_filename, 'a')
             fd.write(mhtml.get_fw_group_header())
 
             self.write_result(fd, no_log_start_idx_msg, self.clk_freq, \
@@ -179,7 +178,7 @@ class FWLog(cm.MSGULog):
         self.log_start_idx = None
         self.clk_freq = None
 
-        print tag + 'parser ends'
+        print(tag + 'parser ends')
         return True
 
 # if entry point is this script, then run this script independently from other parsers.

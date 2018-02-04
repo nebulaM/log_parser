@@ -1,16 +1,14 @@
 import os
-import sys
 import re
 import xml.etree.ElementTree as ET
 import src.msgu.msgu_common as cm
 import src.msgu.msgu_html as mhtml
 from ..shared import dutil as ut
 from ..shared import struct as REG
-sys.path.append(os.path.dirname(sys.argv[0]))
 
 class HWALog(cm.MSGULog):
     SECTION = 'hwa_log'
-    DEFINITION_FILE_DIR = os.path.join(cm.MSGULog.INCLUDE_DIR, 'doc', 'msgu', 'MSGU_HWA_REG.xml')
+    DEFINITION_FILE_DIR = os.path.join(ut.DumpArgvWorker().INCLUDE_DIR, 'doc', 'msgu', 'MSGU_HWA_REG.xml')
     LOG_HEADER = '# MSGU HWA Registers'
     LOG_ENDING = '# MSGU_HWA - IB IU Context RAM'
     # HWA addr 0x0 = MSGU addr 0x2b0000
@@ -132,8 +130,8 @@ class HWALog(cm.MSGULog):
         for reg in root.findall('register'):
             reg_name = reg.find('reg_name').text
             reg_addr = reg.find('reg_address').text
-            #print reg_name
-            #print reg_addr
+            #print(reg_name)
+            #print(reg_addr)
             this_reg = REG.DefReg(reg_addr, reg_name)
             reg_bits = reg.find('reg_bits')
             if reg_bits is not None:
@@ -150,20 +148,20 @@ class HWALog(cm.MSGULog):
                             '''
                             if p.text is not None:
                                 bit_meaning = ''.join([bit_meaning, p.text, '\n'])
-                    #print bit_pos
-                    #print bit_name
-                    #print bit_meaning
+                    #print(bit_pos)
+                    #print(bit_name)
+                    #print(bit_meaning)
                     this_reg.add_bit_des(bit_pos, bit_name, bit_meaning)
             reg_list.append(this_reg)
         if cls.DEBUG_MODE is True:
             for reg in reg_list:
-                print hex(reg.reg_address)
-                print reg.reg_name
+                print(hex(reg.reg_address))
+                print(reg.reg_name)
                 if reg.has_bit_des is True:
                     bit_dict = reg.bit_dict
                     for key in bit_dict.keys():
-                        print key
-                        print bit_dict[key]
+                        print(key)
+                        print(bit_dict[key])
         return reg_list
 
     @classmethod
@@ -198,8 +196,8 @@ class HWALog(cm.MSGULog):
                     # store decoded address as addr in PD document: cpu_addr - MSGU_ADDRESS_OFFSET.
                     decoded_reg = REG.DecodedReg(reg_addr - cls.MSGU_ADDRESS_OFFSET, reg.reg_name, reg_val)
                     if cls.DEBUG_MODE is True:
-                        print hex(decoded_reg.reg_address)
-                        print decoded_reg.reg_name
+                        print(hex(decoded_reg.reg_address))
+                        print(decoded_reg.reg_name)
 
                     if reg.has_bit_des is True:
                         for bit_pos in reg.bit_dict.keys():
@@ -220,9 +218,9 @@ class HWALog(cm.MSGULog):
                                 bit_meaning = cls.re_hex_token.sub(hex_format.format(bit_val), bit_meaning)
                             bit_meaning = cls.re_dec_token.sub(str(bit_val), bit_meaning)
                             if cls.DEBUG_MODE is True:
-                                print bit_pos
-                                print bit_val_str
-                                print bit_meaning
+                                print(bit_pos)
+                                print(bit_val_str)
+                                print(bit_meaning)
                             # add bit_val_str instead of bit_val
                             decoded_reg.add_bit_des(bit_pos, bit_name, bit_val_str, bit_meaning)
                     decoded_reg_dict[decoded_reg.reg_address] = decoded_reg
@@ -230,28 +228,28 @@ class HWALog(cm.MSGULog):
         # post handle special regs and change the meaning with the one defined in handler.
         # refer to [LINK]
         if not decoded_reg_dict:
-            print tag + 'Warnning, HWA section is empty'
+            print(tag + 'Warnning, HWA section is empty')
         else:
             try:
                 cls._post_spec_reg_handler_3000_3020(decoded_reg_dict[0x2b3000], spec_ib_r_access, spec_ib_w_access)
             except KeyError:
-                print tag + 'register 0x2b3000 not found in log'
+                print(tag + 'register 0x2b3000 not found in log')
             try:
                 cls._post_spec_reg_handler_3000_3020(decoded_reg_dict[0x2b3020], spec_ob_r_access, spec_ob_w_access)
             except KeyError:
-                print tag + 'register 0x2b3020 not found in log'
+                print(tag + 'register 0x2b3020 not found in log')
             try:
                 cls._post_spec_reg_handler_3100_3180(decoded_reg_dict[0x2b3100])
             except KeyError:
-                print tag + 'register 0x2b3100 not found in log'
+                print(tag + 'register 0x2b3100 not found in log')
             try:
                 cls._post_spec_reg_handler_3100_3180(decoded_reg_dict[0x2b3180])
             except KeyError:
-                print tag + 'register 0x2b3180 not found in log'
+                print(tag + 'register 0x2b3180 not found in log')
             try:    
                 cls._post_spec_reg_handler_3140(decoded_reg_dict[0x2b3140])
             except KeyError:
-                print tag + 'register 0x2b3140 not found in log'
+                print(tag + 'register 0x2b3140 not found in log')
             ut.handle_parse_math_token(tag_next_level, decoded_reg_dict)
         return decoded_reg_dict
 
@@ -265,9 +263,9 @@ class HWALog(cm.MSGULog):
             ut.save_decoded_reg_dict_to_html_table(decoded_reg_dict, fd, True)
             fd.write(mhtml.get_hwa_standalone_ending())
             fd.close()
-            print tag + 'result saved in ' + filename
+            print(tag + 'result saved in ' + filename)
         else:
-            fd = open(cls.common_out_filename, 'a')
+            fd = open(cls.out_filename, 'a')
             fd.write(mhtml.get_hwa_group_header())
             ut.save_decoded_reg_dict_to_html_table(decoded_reg_dict, fd, cls.DEBUG_MODE)
             fd.write(mhtml.get_hwa_group_ending())
@@ -278,10 +276,10 @@ class HWALog(cm.MSGULog):
             self.set_input_params()
         tag, tag_next_level = ut.get_debug_tags(None, self.MODULE, self.SECTION, 'run')
 
-        print tag + 'parser starts'
+        print(tag + 'parser starts')
         reg_list = self.get_reg_val_list(tag_next_level, self.LOG_HEADER, self.LOG_ENDING, self.BYTE_PER_REG)
         if not reg_list:
-            print tag + 'parser ends, no log for this section'
+            print(tag + 'parser ends, no log for this section')
             return False
 
         definition_reg_list = self.get_def_list()
@@ -289,7 +287,7 @@ class HWALog(cm.MSGULog):
         decoded_reg_dict = self.get_reg_meaning(tag_next_level, reg_list, definition_reg_list)
         self.save_result(tag_next_level, decoded_reg_dict, standalone)
 
-        print tag + 'parser ends'
+        print(tag + 'parser ends')
         return True
 
 # if entry point is this script, then run this script independently from other parsers.

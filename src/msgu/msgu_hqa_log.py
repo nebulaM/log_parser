@@ -1,15 +1,13 @@
 import os
-import sys
 import xml.etree.ElementTree as ET
 import src.msgu.msgu_common as cm
 import src.msgu.msgu_html as mhtml
 from ..shared import dutil as ut
 from ..shared import struct as REG
-sys.path.append(os.path.dirname(sys.argv[0]))
 
 class HQALog(cm.MSGULog, cm.HQA_WORD):
     SECTION = 'hqa_log'
-    DEFINITION_FILE_DIR = os.path.join(cm.MSGULog.INCLUDE_DIR, 'doc', 'msgu', 'MSGU_HQA_REG.xml')
+    DEFINITION_FILE_DIR = os.path.join(ut.DumpArgvWorker().INCLUDE_DIR, 'doc', 'msgu', 'MSGU_HQA_REG.xml')
     LOG_HEADER = '# HQA Memory'
     LOG_ENDING = '# LBA Memory'
 
@@ -135,7 +133,7 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
                 if reg_addr < this_q.reg_lower_bound:
                     continue
                 if reg_addr > this_q.reg_upper_bound:
-                    #print qid,' break at ', reg_addr
+                    #print(qid,' break at ', reg_addr)
                     break
                 this_q.decoded_reg_dict[reg_addr] = REG.DecodedReg(reg_addr, 'TBD', reg_val)
                 if reg_addr == gen_cfg_reg_addr:
@@ -146,7 +144,7 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
                         if self.first_enabled_q < 0:
                             self.first_enabled_q = this_q.qid
                             if verbose is True:
-                                print 'first enabled Q is ', self.first_enabled_q
+                                print('first enabled Q is ', self.first_enabled_q)
 
                 elif reg_addr == hwa_cfg_reg_addr and \
                     this_q.q_mode is self.W_IB and \
@@ -183,10 +181,10 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
                         this_q.is_bad_q = True
             queue_list.append(this_q)
             if verbose is True:
-                print 'qid %d\n%s %s\nlower: %s\nupper: %s' % \
+                print('qid %d\n%s %s\nlower: %s\nupper: %s' % \
                 (this_q.qid, this_q.q_mode, this_q.q_type, \
                 '{:08x}'.format(this_q.reg_lower_bound), \
-                '{:08x}'.format(this_q.reg_upper_bound))
+                '{:08x}'.format(this_q.reg_upper_bound)))
             del this_q
         return queue_list
 
@@ -199,15 +197,15 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
             if hqa_q.is_enabled is False:
                 continue
             if verbose is True:
-                print 'qid ', hqa_q.qid
-            for hqa_reg_addr, decoded_reg in hqa_q.decoded_reg_dict.iteritems():
+                print('qid ', hqa_q.qid)
+            for hqa_reg_addr, decoded_reg in hqa_q.decoded_reg_dict.items():
                 doc_addr = hqa_reg_addr - hqa_q.addr_offset
                 for reg in root.findall('register'):
                     if doc_addr == int(reg.find('reg_address').text, 16):
                         decoded_reg.reg_name = reg.find('reg_name').text
                         if verbose is True:
-                            print doc_addr
-                            print decoded_reg.reg_name
+                            print(doc_addr)
+                            print(decoded_reg.reg_name)
                         reg_bits = reg.find('reg_bits')
                         if reg_bits is not None:
                             for reg_bit in reg_bits.findall('reg_bit'):
@@ -219,7 +217,7 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
                                     for p in bit_des:
                                         flag_save_this_p = True
                                         if p.attrib:
-                                            for p_key, p_val in p.attrib.iteritems():
+                                            for p_key, p_val in p.attrib.items():
                                                 if hqa_q.status_dict[p_key] != p_val:
                                                     flag_save_this_p = False
                                                     break
@@ -241,10 +239,10 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
                                 bit_meaning = cls.re_hex_token.sub(hex_format.format(bit_val), bit_meaning)
                                 bit_meaning = cls.re_dec_token.sub(str(bit_val), bit_meaning)
                                 if verbose is True:
-                                    print bit_pos
-                                    print bit_name
-                                    print bit_val_str
-                                    print bit_meaning
+                                    print(bit_pos)
+                                    print(bit_name)
+                                    print(bit_val_str)
+                                    print(bit_meaning)
                                 decoded_reg.add_bit_des(bit_pos, bit_name, bit_val_str, bit_meaning)
                 hqa_q.decoded_reg_dict[hqa_reg_addr] = decoded_reg
             ut.handle_parse_math_token(tag_next_level, hqa_q.decoded_reg_dict)
@@ -261,21 +259,21 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
             for queue in queue_list:
                 if queue.is_enabled is True:
                     # use address in doc when save
-                    for reg_addr in queue.decoded_reg_dict.iterkeys():
+                    for reg_addr in queue.decoded_reg_dict.keys():
                         queue.decoded_reg_dict[reg_addr].reg_address += cls.HQA_ADDRESS_OFFSET 
                     fd.write(mhtml.get_hqa_tbl_header(queue, first_enabled_q))
                     ut.save_decoded_reg_dict_to_html_table(queue.decoded_reg_dict, fd, True)
                     fd.write(mhtml.get_hqa_tbl_ending())
             fd.write(mhtml.get_hqa_standalone_ending())
             fd.close()
-            print tag + 'result saved in ' + filename
+            print(tag + 'result saved in ' + filename)
         else:
-            fd = open(cls.common_out_filename, 'a')
+            fd = open(cls.out_filename, 'a')
             fd.write(mhtml.get_hqa_group_header(queue_list, first_enabled_q))
             for queue in queue_list:
                 if queue.is_enabled is True:
                     # use address in doc when save
-                    for reg_addr in queue.decoded_reg_dict.iterkeys():
+                    for reg_addr in queue.decoded_reg_dict.keys():
                         queue.decoded_reg_dict[reg_addr].reg_address += cls.HQA_ADDRESS_OFFSET 
                     fd.write(mhtml.get_hqa_tbl_header(queue, first_enabled_q))
                     ut.save_decoded_reg_dict_to_html_table(queue.decoded_reg_dict, fd, cls.DEBUG_MODE)
@@ -290,12 +288,12 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
         self.set_q_range(self.chipset)
         
         tag, tag_next_level = ut.get_debug_tags(None, self.MODULE, self.SECTION, 'run')
-        print tag + 'parser starts'
+        print(tag + 'parser starts')
 
         self.set_int_mode(tag_next_level)
         reg_list = self.get_reg_val_list(tag_next_level, self.LOG_HEADER, self.LOG_ENDING, self.BYTE_PER_REG)
         if not reg_list:
-            print tag + 'parser ends, no log for this section'
+            print(tag + 'parser ends, no log for this section')
             return False
 
         queue_list = self.init_queues(reg_list, self.DEBUG_MODE)
@@ -303,7 +301,7 @@ class HQALog(cm.MSGULog, cm.HQA_WORD):
 
         self.save_result(tag_next_level, queue_list, self.first_enabled_q, standalone)
 
-        print tag + 'parser ends'
+        print(tag + 'parser ends')
         return True
 
 class HQA_Q(cm.HQA_WORD):

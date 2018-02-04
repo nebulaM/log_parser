@@ -1,16 +1,14 @@
 import os
-import sys
 import re
 import src.msgu.msgu_common as cm
 import src.msgu.msgu_html as mhtml
 from ..shared import dutil as ut
 from ..shared import struct as IU
-sys.path.append(os.path.dirname(sys.argv[0]))
 
 class LBALBBLog(cm.MSGULog):
     SECTION = 'lba_lbb_log'
-    LBA_DEFINITION_IU_DIR = os.path.join(cm.MSGULog.INCLUDE_DIR, 'doc', 'msgu', 'MSGU_LBA_IU.cfg')
-    LBA_DEFINITION_FUNC_DIR = os.path.join(cm.MSGULog.INCLUDE_DIR, 'doc', 'msgu', 'MSGU_LBA_ADMIN_IU_FUNC_CODE.cfg')
+    LBA_DEFINITION_IU_DIR = os.path.join(ut.DumpArgvWorker().INCLUDE_DIR, 'doc', 'msgu', 'MSGU_LBA_IU.cfg')
+    LBA_DEFINITION_FUNC_DIR = os.path.join(ut.DumpArgvWorker().INCLUDE_DIR, 'doc', 'msgu', 'MSGU_LBA_ADMIN_IU_FUNC_CODE.cfg')
 
     UNDEFINED_CODE = 'UNKNOWN IU CODE' 
     LBA_LOG_HEADER = '# LBA Memory'
@@ -60,7 +58,7 @@ class LBALBBLog(cm.MSGULog):
     # list of IUs with SGL
     IU_WITH_SGL_LIST = [0x15, 0x1, 0x14, 0x72, 0x73]
 
-    LBB_DEFINITION_IU_DIR = os.path.join(cm.MSGULog.INCLUDE_DIR, 'doc', 'msgu', 'MSGU_LBB_IU.cfg')
+    LBB_DEFINITION_IU_DIR = os.path.join(ut.DumpArgvWorker().INCLUDE_DIR, 'doc', 'msgu', 'MSGU_LBB_IU.cfg')
     LBB_LOG_HEADER = '# LBB Memory'
     LBB_LOG_ENDING = '# MSGU HWA Registers'
     LBB_ADDRESS_OFFSET = 0xbf668000
@@ -124,20 +122,20 @@ class LBALBBLog(cm.MSGULog):
 
         # print out all ius in iu dict if verbose is enabled
         if verbose is True:
-            print tag + 'def_list after read the def file'
+            print(tag + 'def_list after read the def file')
             for iu_idx in def_iu_dict.keys():
                 iu = def_iu_dict[iu_idx]
-                print 'IU name: ' + iu.iu_name
-                print 'IU code: ', iu.iu_code
+                print('IU name: ' + iu.iu_name)
+                print('IU code: ', iu.iu_code)
                 if iu.has_reg is True:
-                    for reg_addr, reg in iu.reg_dict.iteritems():
-                        print reg.reg_address
-                        print reg.reg_name
+                    for reg_addr, reg in iu.reg_dict.items():
+                        print(reg.reg_address)
+                        print(reg.reg_name)
                         if reg.has_bit_des is True:
                             for bit_pos in reg.bit_dict.keys():
                                 bit_name, bit_des = reg.bit_dict[bit_pos]
-                                print bit_pos + ' ' + bit_name
-                                print bit_des
+                                print(bit_pos + ' ' + bit_name)
+                                print(bit_des)
         return def_iu_dict
     @classmethod
     def special_handler_admin_iu_func_code_0x00(cls, iu):
@@ -157,7 +155,7 @@ class LBALBBLog(cm.MSGULog):
                         reg.bit_dict[bit_pos] = [bit_name, bit_val, bit_meaning]
                         break
         except KeyError:
-            print 'special_handler_admin_iu_func_code_0x00: Warning, register 0x{:02x} not found'.format(sgl_des_reg_addr)
+            print('special_handler_admin_iu_func_code_0x00: Warning, register 0x{:02x} not found'.format(sgl_des_reg_addr))
 
     @classmethod
     def special_reg_list_handler_spanning_iu(cls, tag, start_addr, addr_offset, reg_list, verbose=False):
@@ -166,7 +164,7 @@ class LBALBBLog(cm.MSGULog):
         iu_buf_size = cls.IU_BUF_SIZE
         # only IU_SIZE number of register per IU buffer are 
         # currently in use in spanning case
-        useful_regs_per_iu_buf = cls.IU_SIZE / cls.BYTE_PER_REG
+        useful_regs_per_iu_buf = cls.IU_SIZE // cls.BYTE_PER_REG
         common_iu_header_length_in_byte = cls.IU_COMMON_HEADER_SIZE
         idx = 0
         # loop through crash dump list and find out 
@@ -187,7 +185,7 @@ class LBALBBLog(cm.MSGULog):
                     reg_addr, reg_val = reg_list[idx + useful_reg_idx_offset]
                     reg_addr -= addr_offset
                     reg_addr_val_for_this_iu.append([reg_addr, reg_val])
-                idx += iu_buf_size/cls.BYTE_PER_REG
+                idx += iu_buf_size // cls.BYTE_PER_REG
                 # substract used IU buffer space from total length
                 total_length -= useful_regs_per_iu_buf * cls.BYTE_PER_REG
                 # all spanning elements are stored in reg_addr_val_for_this_iu once 
@@ -197,9 +195,9 @@ class LBALBBLog(cm.MSGULog):
             else:
                 idx += 1
         if verbose is True:
-            print tag + ' reg_addr_val_for_this_iu:'
+            print(tag + ' reg_addr_val_for_this_iu:')
             for reg_addr_debug, reg_val_debug in reg_addr_val_for_this_iu:
-                print '{:08x}'.format(reg_addr_debug) + ':{:08x}'.format(reg_val_debug)
+                print('{:08x}'.format(reg_addr_debug) + ':{:08x}'.format(reg_val_debug))
         return reg_addr_val_for_this_iu
 
 
@@ -239,7 +237,7 @@ class LBALBBLog(cm.MSGULog):
                     # so end_addr for this iu is calculated as follows.
                     # Note that once spanning is fixed in log, we should divide
                     # by iu_buf_size instead of iu_size
-                    end_addr = ((length - iu_spanning_threshold) / iu_size) * iu_buf_size
+                    end_addr = ((length - iu_spanning_threshold) // iu_size) * iu_buf_size
                     if (length - iu_spanning_threshold) % iu_size > 0:
                         end_addr += iu_buf_size
                     # Now update start_addr for next iu based on end_addr for this iu
@@ -260,9 +258,9 @@ class LBALBBLog(cm.MSGULog):
                 else:
                     start_addr += iu_size
                 if verbose is True:
-                    print tag + 'iu num ', count
+                    print(tag + 'iu num ', count)
                     for reg_addr_debug, reg_val_debug in reg_addr_val_for_this_iu:
-                        print '{:08x}'.format(reg_addr_debug) + ':{:08x}'.format(reg_val_debug)
+                        print('{:08x}'.format(reg_addr_debug) + ':{:08x}'.format(reg_val_debug))
                 #decoded_iu_list.append(cls.get_this_iu_meaning(tag_next_level, reg_addr_val_for_this_iu, def_iu_dict, admin_func_code_dict))
                 list_of_ius.append(reg_addr_val_for_this_iu)
                 reg_addr_val_for_this_iu = []               
@@ -371,11 +369,11 @@ class LBALBBLog(cm.MSGULog):
         if iu_code in cls.IU_WITH_SGL_LIST:
             common_header_size_in_byte = cls.IU_COMMON_HEADER_SIZE
             total_header_size_in_byte = cls.AIO_IU_TOTAL_HEADER_SIZE
-            print tag + 'IU ' + hex(iu_code) + ' has SGL'
+            print(tag + 'IU ' + hex(iu_code) + ' has SGL')
             # iu_length does not include common header, add it and then substract total header size
             # to get sgl size
             sgl_length_in_byte = iu_length + common_header_size_in_byte - total_header_size_in_byte
-            print tag + 'SGL length in byte is ', sgl_length_in_byte
+            print(tag + 'SGL length in byte is ', sgl_length_in_byte)
             decoded_iu = cls.decode_iu_sgl(tag_next_level, decoded_iu, reg_list_for_iu, sgl_length_in_byte, total_header_size_in_byte)
         return decoded_iu
 
@@ -392,23 +390,23 @@ class LBALBBLog(cm.MSGULog):
             else:
                 total_header_size_in_byte = cls.RS_IU_TOTAL_HEADER_SIZE
             common_header_size_in_byte = cls.IU_COMMON_HEADER_SIZE
-            print tag + 'IU ' + hex(iu_code) + ' has SGL'
+            print(tag + 'IU ' + hex(iu_code) + ' has SGL')
             # iu_length does not include common header, add it and then substract total header size
             # to get sgl size
             sgl_length_in_byte = iu_length + common_header_size_in_byte - total_header_size_in_byte
-            print tag + 'SGL length in byte is ', sgl_length_in_byte
+            print(tag + 'SGL length in byte is ', sgl_length_in_byte)
             decoded_iu = cls.decode_iu_sgl(tag_next_level, decoded_iu, reg_list_for_iu, sgl_length_in_byte, total_header_size_in_byte)
         return decoded_iu
     @classmethod
     def decode_iu_sgl(cls, tag, decoded_iu, reg_list_for_iu, sgl_length_in_byte, offset_in_byte):
         tag = ut.get_debug_tags(tag, cls.MODULE, cls.SECTION, 'decode_iu_sgl')[0]
         single_sgl_in_byte = cls.SGL_SIZE
-        offset = offset_in_byte /  cls.BYTE_PER_REG
-        reg_per_sgl = cls.SGL_SIZE/cls.BYTE_PER_REG
+        offset = offset_in_byte //  cls.BYTE_PER_REG
+        reg_per_sgl = cls.SGL_SIZE // cls.BYTE_PER_REG
         if sgl_length_in_byte < single_sgl_in_byte or \
         len(reg_list_for_iu)*cls.BYTE_PER_REG < (offset_in_byte + sgl_length_in_byte):
-            print tag + 'Warning, SGL len in byte is {}, reg list len in byte for SGL is {}'\
-            .format(sgl_length_in_byte, len(reg_list_for_iu)*cls.BYTE_PER_REG - offset_in_byte)
+            print(tag + 'Warning, SGL len in byte is {}, reg list len in byte for SGL is {}'\
+            .format(sgl_length_in_byte, len(reg_list_for_iu)*cls.BYTE_PER_REG - offset_in_byte))
             #return decoded_iu
         idx = 0
         # loop through list of registers for this iu and save
@@ -418,7 +416,7 @@ class LBALBBLog(cm.MSGULog):
             sgl_des_addr_hi = reg_list_for_iu[offset + idx + 1][1]
             sgl_des_len = reg_list_for_iu[offset + idx + 2][1]
             sgl_des_ctrl = reg_list_for_iu[offset + idx + 3][1]
-            #print tag + '{:08x} {:08x} {} {:08x} '.format(sgl_des_addr_lo, sgl_des_addr_hi, sgl_des_len, sgl_des_ctrl)
+            #print(tag + '{:08x} {:08x} {} {:08x} '.format(sgl_des_addr_lo, sgl_des_addr_hi, sgl_des_len, sgl_des_ctrl))
             decoded_iu.add_sgl(sgl_des_addr_lo, sgl_des_addr_hi, sgl_des_len, sgl_des_ctrl)
             sgl_length_in_byte -= single_sgl_in_byte
             if sgl_length_in_byte < single_sgl_in_byte:
@@ -488,13 +486,13 @@ class LBALBBLog(cm.MSGULog):
             return
         # we have max_bit_per_row + 1 cells(an additional cell for "Byte\Bit") in table
         # so each cell occupies the following percentage of space in a row
-        percent_bit = 100/(max_bit_per_row + 1)
-        # most of the time, 100.0/(max_bit_per_row + 1) is not an integer,
+        percent_bit = 100 // (max_bit_per_row + 1)
+        # most of the time, 100.0 / (max_bit_per_row + 1) is not an integer,
         # should the number greater than 0.5 in its decimal part,
         # add 1 more percentage to the result
-        if 100.0/(max_bit_per_row + 1) > (percent_bit + 0.5):
+        if 100.0 / (max_bit_per_row + 1) > (percent_bit + 0.5):
             percent_bit += 1
-        percent_title = 100 - percent_bit*max_bit_per_row
+        percent_title = 100 - percent_bit * max_bit_per_row
         str_table_hdr = '''        <thead>
             <tr>
                 <th width="{}%">Byte\Bit</th>'''.format(percent_title)
@@ -507,9 +505,9 @@ class LBALBBLog(cm.MSGULog):
         fd.write('        </thead>\n        <tbody>\n')
 
         # how many rows per reg
-        num_of_row = max_bit_per_reg/max_bit_per_row
+        num_of_row = max_bit_per_reg // max_bit_per_row
 
-        sorted_reg_list = sorted(iu.reg_dict.iterkeys())
+        sorted_reg_list = sorted(iu.reg_dict.keys())
         # normalize reg address based on first reg address
         norm_last_reg_addr = sorted_reg_list[-1] - sorted_reg_list[0]
         # divide by 4 since 4 byte per reg
@@ -518,7 +516,7 @@ class LBALBBLog(cm.MSGULog):
         idx = 0
         row_count = 0
         if debug is True:
-            print "itercount ", iter_count
+            print("itercount ", iter_count)
         while idx <= iter_count:
             reg_addr = sorted_reg_list[0] + (idx << 2)
             try:
@@ -550,7 +548,7 @@ class LBALBBLog(cm.MSGULog):
                             else:
                                 # case 2.1: the bit gap does not exceed max_bit_per_row boundary
                                 # simply fill the bit gap with dummy staff
-                                if (low - 1)/max_bit_per_row == expected_bit_pos/max_bit_per_row:
+                                if int((low - 1) // max_bit_per_row) == int(expected_bit_pos // max_bit_per_row):
                                     add_bit_pos = str(low - 1) + ':' + str(expected_bit_pos)
                                     new_bit_list.append([add_bit_pos, '', '0', ''])
                                 # case 2.1: the bit gap does not exceed max_bit_per_row boundary
@@ -558,7 +556,7 @@ class LBALBBLog(cm.MSGULog):
                                 # gap with dummy staff. Otherwise result cannot be displayed properly
                                 else:
                                     # boundary is stored in tmp_bit_pos
-                                    tmp_bit_pos = (expected_bit_pos/max_bit_per_row) * max_bit_per_row + max_bit_per_row
+                                    tmp_bit_pos = (expected_bit_pos // max_bit_per_row) * max_bit_per_row + max_bit_per_row
                                     # fill the first half of bit gap in last row
                                     add_bit_pos = str(tmp_bit_pos - 1) + ':' + str(expected_bit_pos)
                                     new_bit_list.append([add_bit_pos, '', '0', ''])
@@ -593,7 +591,7 @@ class LBALBBLog(cm.MSGULog):
                             low = int(low)
                             total_bit = hi - low
                             # divide by max_bit_per_row, add one as bit starts from 0
-                            row_span = (total_bit/max_bit_per_row) + 1
+                            row_span = int(total_bit // max_bit_per_row) + 1
                             if row_span > 1:
                                 low_div_remain = low % max_bit_per_row
                                 hi_div_remain = hi % max_bit_per_row
@@ -602,14 +600,14 @@ class LBALBBLog(cm.MSGULog):
                                     col_span = max_bit_per_row
                                 else:
                                     if low_div_remain > 0:
-                                        col_span = low/max_bit_per_row + max_bit_per_row - low_div_remain
+                                        col_span = int(low // max_bit_per_row) + max_bit_per_row - low_div_remain
                                         str_write = '    <td rowspan="%d" colspan="%d"><p><b>%s:</b> See next cell for details.</p></td>\n' % \
                                         (1, col_span, bit_name)
                                         # meaning for cell in low bit_pos, if bit_pos exceeds row boundary
                                         write_bit_list.append([1, col_span, low, str_write])
                                         row_span -= 1
                                         col_span = max_bit_per_row
-                                        low = low/max_bit_per_row + max_bit_per_row
+                                        low = int(low // max_bit_per_row) + max_bit_per_row
                                     if hi_div_remain < (max_bit_per_row - 1):
                                         row_span -= 1
                                         col_span = max_bit_per_row
@@ -656,15 +654,15 @@ class LBALBBLog(cm.MSGULog):
 
                     if debug is True:
                         for row_span, col_span, low, str_write in write_bit_list:
-                            print "rowspan %d colspan %d low %d str %s"\
-                            %(row_span, col_span, low, str_write)
+                            print("rowspan %d colspan %d low %d str %s"\
+                            %(row_span, col_span, low, str_write))
                         del row_span, col_span, low, str_write
                     # write result
                     flag_one_row = False
                     prev_row = 0
                     one_row_list = []
                     for row_span, col_span, low, str_write in write_bit_list:
-                        curr_row = low/max_bit_per_row
+                        curr_row = low // max_bit_per_row
                         # handle meanings occupy less than 1 completed row
                         # from prev_row
                         if prev_row != curr_row and flag_one_row is True:
@@ -751,7 +749,7 @@ class LBALBBLog(cm.MSGULog):
         fd.write('<div class="wrap">\n<div class="element">\n')
         if iu.reg_dict is None:
             return
-        for reg_addr in sorted(iu.reg_dict.iterkeys()):
+        for reg_addr in sorted(iu.reg_dict.keys()):
             reg = iu.reg_dict[reg_addr]
             if reg.has_bit_des is True:
                 for bit_pos in reg.bit_dict.keys():
@@ -771,7 +769,7 @@ class LBALBBLog(cm.MSGULog):
             fd = open(filename, 'w')
             fd.write(mhtml.get_lba_lbb_standalone_header(cls.INPUT_DIR))
         else:
-            fd = open(cls.common_out_filename, 'a')
+            fd = open(cls.out_filename, 'a')
             fd.write(mhtml.get_lba_lbb_group_header())
         
         iu_count = 0
@@ -798,7 +796,7 @@ class LBALBBLog(cm.MSGULog):
         if standalone is True:
             fd.write(mhtml.get_lba_lbb_standalone_ending())
             fd.close()
-            print tag + 'result saved in ' + filename
+            print(tag + 'result saved in ' + filename)
         else:
             fd.write(mhtml.get_lba_lbb_group_ending())
             fd.close()
@@ -808,7 +806,7 @@ class LBALBBLog(cm.MSGULog):
             self.set_input_params()
         tag, tag_next_level = ut.get_debug_tags(None, self.MODULE, self.SECTION, 'run')
 
-        print tag + 'parser starts'
+        print(tag + 'parser starts')
 
         # LBA section
         lba_reg_list = self.get_reg_val_list(tag_next_level, self.LBA_LOG_HEADER, self.LBA_LOG_ENDING, self.BYTE_PER_REG)
@@ -823,7 +821,7 @@ class LBALBBLog(cm.MSGULog):
         # LBB section
         lbb_reg_list = self.get_reg_val_list(tag_next_level, self.LBB_LOG_HEADER, self.LBB_LOG_ENDING, self.BYTE_PER_REG)
         if not lbb_reg_list and not lba_reg_list:
-            print tag + 'parser ends, no log for this section'
+            print(tag + 'parser ends, no log for this section')
             return False
         elif not lbb_reg_list:
             pass
@@ -835,7 +833,7 @@ class LBALBBLog(cm.MSGULog):
         # save both LBA and LBB result
         self.save_result(tag_next_level, lba_decoded_iu_list, lbb_decoded_iu_list, standalone)
 
-        print tag + 'parser ends'
+        print(tag + 'parser ends')
         return True
 
 # if entry point is this script, then run this script independently from other parsers.

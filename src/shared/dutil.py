@@ -1,10 +1,13 @@
 '''This module is a lib that can be used for log dump.'''
+import sys
+import os
+import argparse
 import re
 import ntpath
-import time
-import datetime
 import operator
+from datetime import datetime
 from random import randint
+
 MODULE_NAME = 'dutil'
 def get_debug_tags(tag_upper_level, module, section, func_name):
     ''' Get data from a input file and split data on line
@@ -34,20 +37,11 @@ def get_data_from_file(tag, filename):
     '''
     if tag is not None:
         tag = get_debug_tags(tag, MODULE_NAME, None, 'get_data_from_file')[0]
-        print tag + 'input file is ' + filename
+        print(tag + 'input file is ' + filename)
     f_d = open(filename, 'r')
     lines = f_d.read().splitlines()
     f_d.close()
     return lines
-
-def log(msg, debug=False):
-    if debug is True:
-        print msg
-
-def print_list(my_list):
-    print 'print_list starts:'
-    print '\n'.join(my_list)
-    print 'print_list ends.'
 
 def get_filename(path):
     ''' Get filename from file path
@@ -63,16 +57,15 @@ def get_timestamp():
                  in [year_month_day_hr_min_sec] format
         @note: Example 2017_10_30_15:01:50
     '''
-    this_timestamp = time.time()
-    return datetime.datetime.fromtimestamp(this_timestamp).strftime('%Y_%m_%d_%H_%M_%S')
+    return datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
 
-def get_parsed_filename(filepath, module, section):
-    ''' Get output filename based on full filepath to input crash dump,
+def get_parsed_filename(filepath, module, section=None):
+    ''' Get output filename based on full filepath to input dump file,
         module name and section name. A timestamp is attached too.
-        @param filepath: path to input crash dump
+        @param filepath: path to input dump file
         @param module: module name, for example MSGU
-        @param section: section name under module
-        @return: filename for the input crash dump
+        @param section: Optional, section name under module
+        @return: filename for the input dump file
     '''
     filename = get_filename(filepath)
     timestamp = get_timestamp()
@@ -176,8 +169,8 @@ def create_def_list_from_logh(tag, filename, definition_prefix, verbose=False):
         @return def_list: definition list created from the header file
     '''
     tag, tag_next_level = get_debug_tags(tag, MODULE_NAME, None, 'create_def_list_from_logh')
-    print tag + 'file path is: ' + filename
-    print tag + 'prefix for definition is: ' + definition_prefix
+    print(tag + 'file path is: ' + filename)
+    print(tag + 'prefix for definition is: ' + definition_prefix)
     def_list = []
     if verbose is True:
         prefix = re.compile(definition_prefix, re.DEBUG)
@@ -191,14 +184,16 @@ def create_def_list_from_logh(tag, filename, definition_prefix, verbose=False):
                 This is true for *_log.h in Luxor and Wildfire.
             '''
             drop1, useful, drop2 = line.split('\"')
-            log(tag + 'line before: ' + line, verbose)
-            log(tag + 'line after: ' + useful, verbose)
+            if verbose:
+                print(tag + 'line before: ' + line)
+                print(tag + 'line after: ' + useful)
             ''' save the trimmed string in list, index matters.
             '''
             def_list.append(useful)
     if verbose is True:
-        print tag + 'list to return is:'
-        print_list(def_list)
+        print(tag + 'def_list is:')
+        print('\n'.join(def_list))
+        print(tag + 'end of def_list.')
     return def_list
 
 def get_scsi_code_dict(tag, section, def_file_dir, verbose=False):
@@ -217,11 +212,11 @@ def get_scsi_code_dict(tag, section, def_file_dir, verbose=False):
     re_scsi_code = re.compile('^(\s*)(' + prefix + ')([A-Z0-9_]+)(\s*)=(\s*)(0[xX])([0-9A-Fa-f]+)(,?)(\s*)$')
     scsi_code_dict = {}
     if verbose is True:
-        print tag
+        print(tag)
     for line in lines:
         if re_scsi_code.search(line) is not None:
             if verbose is True:
-                print line
+                print(line)
             line = line.replace(' ', '')
             line = line.replace(',', '')
             scsi_name, scsi_code = line.split('=')
@@ -251,14 +246,14 @@ def save_line_to_list(tag, header, ending, filename, line_length):
 
     line_list = []
 
-    # Get full crash dump so we can search magu fw log from it
+    # Get full dump_file so we can search magu fw log from it
     lines = get_data_from_file(tag_next_level, filename)
 
     # Line number starts from 1(can be set to 0)
     line_num = 1
-    print tag + 'line number starts from:', line_num
+    print(tag + 'line number starts from:', line_num)
 
-    # flag_process_line is set to 1 within the desired crash dump section
+    # flag_process_line is set to 1 within the desired dump file section
     flag_process_line = False
 
     pre_line = ''
@@ -269,23 +264,23 @@ def save_line_to_list(tag, header, ending, filename, line_length):
                 # empty everything and begin again
                 line_list = []
                 pre_line = ''
-                print tag + 'Warnning, find 2nd section header [' + header+ '] on line ', \
-                line_num, ' before section ending ' + ending
+                print(tag + 'Warnning, find 2nd section header [' + header+ '] on line ', \
+                line_num, ' before section ending ' + ending)
             else:
                 # begining of desired section, set flag_process_line to True
                 flag_process_line = True
-                print tag + 'Find section header: ['+ header + '] at line: ', line_num
+                print(tag + 'Find section header: ['+ header + '] on line: ', line_num)
             line_num += 1
         elif line == ending:
             if flag_process_line is False:
-                print tag + 'Warnning, section ending [' + ending + '] appears on line ', \
-                line_num, ' before section header [' + header + '], skip this ending'
+                print(tag + 'Warnning, section ending [' + ending + '] appears on line ', \
+                line_num, ' before section header [' + header + '], skip this ending')
                 line_num += 1
             else:
                  # ending of desired section, set flag_process_line to False
                 flag_process_line = False
-                print tag + 'Find section ending: ['+ ending + '] at line: ', line_num
-                ''' Currently in our crash dump, the log is printed out more than one time,
+                print(tag + 'Find section ending: ['+ ending + '] on line: ', line_num)
+                ''' Currently in our dump file, the log is printed out more than one time,
                     but we only have to process the log once. Therefore break after line
                     ending is found. '''
                 break
@@ -297,7 +292,7 @@ def save_line_to_list(tag, header, ending, filename, line_length):
         if line == header:
             pre_line = ''
             continue
-        # empty line in crash dump is ignored, date stamp such as '2017-09-09 12:57:19' is ignored
+        # empty line in dump file is ignored, date stamp such as '2017-09-09 12:57:19' is ignored
         if line != '' and line != header and line != ending:
 
             # remove undesired tokens
@@ -318,8 +313,8 @@ def save_line_to_list(tag, header, ending, filename, line_length):
                         # Case 1.1: pre_line not added to line_list yet,
                         # but this line is a completed line, add pre_line first,
                         # then add this line
-                        print tag + 'Warning, pre_line ' + pre_line + \
-                        ' too short, but current line is a completed line, add pre_line to list with reduced length'
+                        print(tag + 'Warning, pre_line ' + pre_line + \
+                        ' too short, but current line is a completed line, add pre_line to list with reduced length')
                         line_list.append(pre_line)
                     # Case 1.2: add current line
                     line_list.append(line)
@@ -336,8 +331,8 @@ def save_line_to_list(tag, header, ending, filename, line_length):
                         elif len(pre_line) > line_length:
                             # Case 2.1.2: After appending lines,
                             # pre_line length is too long, give a warning and add it
-                            print tag + 'Warning, line ' + pre_line + \
-                            ' exceeds max length, add it to line_list with longer length'
+                            print(tag + 'Warning, line ' + pre_line + \
+                            ' exceeds max length, add it to line_list with longer length')
                             line_list.append(pre_line)
                         else:
                             # Case 2.1.3: After appending lines,
@@ -348,8 +343,8 @@ def save_line_to_list(tag, header, ending, filename, line_length):
                     # do nothing
                 else:
                     # Case 3: line > completed length, give a warning and add it
-                    print tag + 'Warning, line ' + line + \
-                    ' exceeds max length, add it to line_list with longer length'
+                    print(tag + 'Warning, line ' + line + \
+                    ' exceeds max length, add it to line_list with longer length')
                     line_list.append(line)
             # move to next line
             pre_line = line
@@ -403,14 +398,14 @@ def register_walk(first_reg_addr, byte_per_reg, val_per_reg, endianness, log_wor
             reg_val_idx_h += plus_minus_1
 
             if log_word_list_idx > len(log_word_list):
-                print 'log_word_list \[$log_word_list] ends unexpected, register value will not be stored starting from register address\[[lindex $pair_list end]]'
+                print('log_word_list length too short, register value will not be stored starting from register address {}'.format(pair_list[-1]))
                 # remove last reg address because we do not have correct value for it
                 pair_list.pop()
                 return pair_list
         # store value for the addr, remember to trim all whitespace
         value = value.replace(" ", "")
         value_dec = int(value, 16)
-        #print reg_addr +' '+ value
+        #print(reg_addr +' '+ value)
         pair_list.append([reg_addr, value_dec])
         if log_word_list_idx >= len(log_word_list):
             break
@@ -424,7 +419,7 @@ def register_walk(first_reg_addr, byte_per_reg, val_per_reg, endianness, log_wor
 def reg_dump_line_to_addr_val_pair(tag, reg_dump_line, endianness, byte_per_reg, byte_per_val, val_per_line, verbose=False):
     ''' Generate a [list] of "regAddr-regValue" pairs from [log_word_list], according to given params
         @param tag: tag from caller
-        @param reg_dump_line: a line of hex code from crash dump's register dump
+        @param reg_dump_line: a line of hex code from dump file's register dump
         @param endianness: 'little' or 'big'
         @param byte_per_reg: how many bytes are stored statring at this register address
         @param byte_per_val: how many bytes are stored in one value
@@ -461,12 +456,14 @@ def reg_dump_line_to_addr_val_pair(tag, reg_dump_line, endianness, byte_per_reg,
     reg_dump_line = reg_dump_line.rstrip()
     log_word_list = reg_dump_line.split()
     if verbose is True:
-        print_list(log_word_list)
+        print(tag + 'log_word_list is:')
+        print('\n'.join(log_word_list))
+        print(tag + 'end of log_word_list.')
     # first value is a reg address
     act_val_per_line = len(log_word_list) -1
     if act_val_per_line != val_per_line:
-        print tag + 'Warning, line ' + reg_dump_line + ' has ', act_val_per_line, 'register values splited by whitespace.'
-        print 'This line will not be translated.'
+        print(tag + 'Warning, line ' + reg_dump_line + ' has ', act_val_per_line, 'register values splited by whitespace.')
+        print('This line will not be translated.')
         return []
 
     first_reg_addr = log_word_list[0]
@@ -474,8 +471,8 @@ def reg_dump_line_to_addr_val_pair(tag, reg_dump_line, endianness, byte_per_reg,
     try:
         first_reg_addr = int(first_reg_addr, 16)
     except ValueError:
-        print tag + 'Warning, line ' + reg_dump_line + 'first word is not a valid register address'
-        print 'This line will not be translated.'
+        print(tag + 'Warning, line ' + reg_dump_line + 'first word is not a valid register address')
+        print('This line will not be translated.')
         return []
     return register_walk(first_reg_addr, byte_per_reg, val_per_reg, endianness, 1, log_word_list)
 
@@ -485,8 +482,8 @@ def bit_shift(num, position):
         @param position: shift how many position to the right
         @return tuple of [num_aft_shift, num_aft_shift_in_bin_str]
         @example: 
-            shift_bit(32, '5:3') output [4, '100'] (32 is 0010_0000)
-            shift_bit(32, 5) output [1, '1']
+            bit_shift(32, '5:3') output [4, '100'] (32 is 0010_0000)
+            bit_shift(32, 5) output [1, '1']
     '''
     mask = 0
     flag_mask = False
@@ -508,7 +505,7 @@ def bit_shift(num, position):
     else:
         shift = position
     if shift > 63:
-        print 'support max 64 bit shift, return the original num'
+        print('support max 64 bit shift, return the original num')
         return num, format(num, '064b')
 
     if flag_mask is False:
@@ -538,7 +535,7 @@ def handle_logic_token(str_val, raw_meaning):
     re_val = re.compile(''.join([str_val, ':']))
     for line in raw_meaning.splitlines():
         if re_val.match(line) is not None:
-            #print "handle logic " + line
+            #print("handle logic " + line)
             return re_val.sub('', line)
     return raw_meaning
 
@@ -559,10 +556,13 @@ def handle_parse_math_token(tag, decoded_reg_dict, verbose = False):
             In 2 and 3 tokens will be replaced by calculated result.
     '''
     tag, tag_next_level = get_debug_tags(tag, MODULE_NAME, None, 'handle_parse_math_token')
-    ops = { '+': operator.add, '-': operator.sub, '*': operator.mul, '/': operator.div }
+    # python 3 has truediv(/) and floordiv(//), for our purpose floordiv is enough
+    # also tested with truediv, up to now using truediv here does not affect result
+    # let's keep it simple for now, as we usually only interested in integer operation.
+    ops = { '+': operator.add, '-': operator.sub, '*': operator.mul, '/': operator.floordiv }
     re_math_token = re.compile('(@PARSE_MATH_START@)([0-9]+)([\+\-\/\*])([0-9a-zA-Z_\s]+?)(@PARSE_MATH_END@)')
     re_num = re.compile('^[0-9]+$')
-    for idx, decoded_reg in decoded_reg_dict.iteritems():
+    for idx, decoded_reg in decoded_reg_dict.items():
         if decoded_reg.has_bit_des is True:
             for bit_pos in decoded_reg.bit_dict.keys():
                 bit_name, bit_val, bit_meaning = decoded_reg.bit_dict[bit_pos]
@@ -574,39 +574,39 @@ def handle_parse_math_token(tag, decoded_reg_dict, verbose = False):
                     flag_a_is_num = True
                     flag_b_is_num = True
                     if verbose is True:
-                        print tag + "bit_meaning needs math: " + bit_meaning
+                        print(tag + "bit_meaning needs math: " + bit_meaning)
                     words = re.findall('(\w+)', match.group(0))
                     if not words:
-                        print tag + match.group(0) + ' has no word'
+                        print(tag + match.group(0) + ' has no word')
                         bit_meaning = bit_meaning.replace(match.group(0), 'NO_WORD', 1)
                         match = re_math_token.search(bit_meaning)
                         continue
                     # words are @PARSE_MATH_START@, num1/var1, num2/var2, @PARSE_MATH_END@
                     # so its length must be 4. Otherwise this function cannot work
                     elif len(words) != 4:
-                        print tag + match.group(0) + ' content in math token not valid'
-                        print tag
-                        print words
+                        print(tag + match.group(0) + ' content in math token not valid')
+                        print(tag)
+                        print(words)
                         bit_meaning = bit_meaning.replace(match.group(0), 'UNDEFINED', 1)
-                        print bit_meaning
+                        print(bit_meaning)
                         match = re_math_token.search(bit_meaning)
                         continue
                     if verbose is True:
-                        print tag + 'words: '
-                        print words
+                        print(tag + 'words: ')
+                        print(words)
                     try:
                         a = int(words[1])
                     except ValueError:
                         a = words[1]
                         if verbose is True:
-                            print 'a = ' + a + ' is not a num'
+                            print('a = ' + a + ' is not a num')
                         flag_a_is_num = False
                     try:
                         b = int(words[2])
                     except ValueError:
                         b = words[2]
                         if verbose is True:
-                            print 'b = ' + b + ' is not a num'
+                            print('b = ' + b + ' is not a num')
                         flag_b_is_num = False
                     for bit_pos_inner in decoded_reg.bit_dict.keys():
                         bit_name_inner, bit_val_inner, bit_meaning_inner = decoded_reg.bit_dict[bit_pos_inner]
@@ -627,24 +627,24 @@ def handle_parse_math_token(tag, decoded_reg_dict, verbose = False):
                         if flag_a_is_num is True and flag_b_is_num is True:
                             break
                     if flag_a_is_num is False or flag_b_is_num is False:
-                        print tag + 'cannot find value for a or b:'
-                        print a
-                        print b
+                        print(tag + 'cannot find value for a or b:')
+                        print(a)
+                        print(b)
                         bit_meaning = bit_meaning.replace(match.group(0), 'CAN_NOT_FIND_VALUE', 1)
                     else:
                         opers = re.findall('[\+\-\*\/]', match.group(0))
                         if not opers:
-                            print tag + "no math operator in " + match.group(0)
+                            print(tag + "no math operator in " + match.group(0))
                             bit_meaning = bit_meaning.replace(match.group(0), 'NO_MATH_OPER', 1)
                         elif len(opers) > 1:
-                            print tag + "too many math operators in " + match.group(0)
+                            print(tag + "too many math operators in " + match.group(0))
                             bit_meaning = bit_meaning.replace(match.group(0), 'TOO_MANY_MATH_OPER', 1)
                         else:
                             if verbose is True:
-                                print tag + 'bfr ' + bit_meaning
+                                print(tag + 'bfr ' + bit_meaning)
                             bit_meaning = bit_meaning.replace(match.group(0), str(ops[opers[0]](a, b)), 1)
                             if verbose is True:
-                                print tag + 'aft ' + bit_meaning
+                                print(tag + 'aft ' + bit_meaning)
                     match = re_math_token.search(bit_meaning)
                 decoded_reg.add_bit_des(bit_pos, bit_name, bit_val, bit_meaning)
 
@@ -662,7 +662,7 @@ def save_decoded_reg_dict_to_html_table(reg_dict, fd, debug=False):
         color_list = ['#86c4f3', '#efbd58', '#97e076', '#e5d899', '#dce0e5']
         last_rand_color_idx = 0
 
-    for reg_addr in sorted(reg_dict.iterkeys()):
+    for reg_addr in sorted(reg_dict.keys()):
         reg = reg_dict[reg_addr]
         reg_val_str = add_mark_to_word('{:016x}'.format(reg.reg_val), '_', 4)
         fd.write('  <tr>\n')
@@ -741,10 +741,10 @@ def save_reg_hex_dump_to_html(reg_list, addr_offset, value_per_line, fd):
         # For each char in decoded hex val, if the char
         # can be displayed, then save the char
         # otherwise save "." as char
-        for char in hex_raw_reg_val.decode('hex'):
-            if char < ' ' or char > '~':
-                char = '.'
-            decoded_hex_val = ''.join([decoded_hex_val, char])
+        for val in bytearray.fromhex(hex_raw_reg_val):
+            if val < ord(' ') or val > ord('~'):
+                val = ord('.')
+            decoded_hex_val = ''.join([decoded_hex_val, chr(val)])
                 
         reg_val_decode = ''.join([reg_val_decode, decoded_hex_val])
         idx += 1
@@ -755,3 +755,94 @@ def save_reg_hex_dump_to_html(reg_list, addr_offset, value_per_line, fd):
             fd.write(str_write)
             idx = 0
     fd.write('</div>\n</div>\n')
+
+class DumpArgvWorker(object):
+    ''' Handle argv for register dump.
+    '''
+    # Path to input dump file
+    INPUT_DIR = ''
+    # Path to output dir
+    OUTPUT_DIR = ''
+    # Include dir that contains definition files
+    INCLUDE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'include')
+    # Enable debugging if set to true
+    DEBUG_MODE = False
+
+    @classmethod
+    def _set_input_filename(cls, filename):
+        ''' Validate and set INPUT_DIR to filename
+            @param filename: path to an input file, must exist
+        '''
+        if os.path.isfile(filename):
+            cls.INPUT_DIR = filename
+        else:
+            print('Error, [{}] is not a valid input file'.format(filename))
+            sys.exit(1)
+
+    @classmethod
+    def _set_output_dir(cls, in_file, out_dir):
+        ''' Validate and set OUTPUT_DIR to out_dir
+            @param in_file: path to input file
+            @param out_dir: path to output dir
+            @note: set OUTPUT_DIR to parent dir of input file
+                   if out_dir is None or not valid
+        '''
+        # must first check if isfile, in case out_dir is a file
+        # do NOT check with isdir here, because we may make dir later
+        # if the dir not exist 
+        if not out_dir or os.path.isfile(out_dir) or not os.path.dirname(out_dir):
+            print('Warning, [{}] is not a valid output dirname'.format(out_dir))
+            out_dir = os.path.join(os.path.dirname(os.path.abspath(in_file)))
+            print('Warning, use default directory [{}] for output'.format(out_dir))
+        cls.OUTPUT_DIR = out_dir
+        # check if dir exists is necessary in case
+        # root for OUTPUT_DIR is read-only
+        if not os.path.exists(cls.OUTPUT_DIR):
+            os.makedirs(cls.OUTPUT_DIR)
+
+    @classmethod
+    def _build(cls):
+        ''' Default method to construct argparse arguments
+            @note: if a child class need to use its own _build(),
+                   then override this _build() and pass its own build()
+                   as build_cb to parse() 
+        '''
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-i", "--inFile", help="path to input dump file", required=True)
+        parser.add_argument("-o", "--outDir", help="path to output folder for result", default=cls.OUTPUT_DIR)
+        parser.add_argument("-d", "--debug", help="enable additional log", dest='debug_mode', action='store_true')
+        return parser
+
+    @classmethod
+    def parse(cls, build_cb=None):
+        ''' Get args from argparse and ensure that all args defined in
+            parser are valid
+            @param build_cb: if not None, then use build_cb() to construct
+                             argparse. Otherwise use default _build()
+            @return args parsed by parser
+            @note: 
+                1. build_cb MUST override _build() 
+                2. params defined in _build() are validate and stored after calling
+                   this method
+        '''
+        if build_cb:
+            parser = build_cb()
+        else:
+            parser = cls._build()
+
+        args = parser.parse_args()
+        cls._set_input_filename(args.inFile)
+        cls._set_output_dir(args.inFile, args.outDir)
+        cls.DEBUG_MODE = args.debug_mode
+
+        # return args for additional argv defined 
+        # in case build_cb is not None
+        return args
+
+class XMLREToken():
+    # regular expression for things like 'When set to logic'
+    re_logic = re.compile('When([a-zA-Z\s]+)logic:')
+    # regular expression token that replace contents with hex in definition files
+    re_hex_token = re.compile('@PARSE_REPLACE_VALUE_HEX_START@[a-zA-Z0-9\s_]+@PARSE_REPLACE_VALUE_HEX_END@')
+    # regular expression token that replace contents with decimal in definition files 
+    re_dec_token = re.compile('@PARSE_REPLACE_VALUE_START@[a-zA-Z0-9\s_]+@PARSE_REPLACE_VALUE_END@')

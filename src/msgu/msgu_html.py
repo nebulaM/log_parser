@@ -1,7 +1,8 @@
 import os
 import src.msgu.msgu_common as cm
+from ..shared import dutil as ut
 
-HTML_LIB_DIR = os.path.join(cm.MSGULog.INCLUDE_DIR, 'lib', 'html')
+HTML_LIB_DIR = os.path.join(ut.DumpArgvWorker.INCLUDE_DIR, 'lib', 'html')
 
 def get_stylesheet():
     filename = os.path.join(HTML_LIB_DIR, 'bootstrap.min.css')
