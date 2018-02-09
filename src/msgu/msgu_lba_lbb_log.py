@@ -286,7 +286,7 @@ class LBALBBLog(cm.MSGULog):
         ''' Decode this iu based on IU code.
             If IU code not belongs to any of the Admin, AIO or RS IU, then return IU without decoding.
         '''
-        tag, tag_next_level = ut.get_debug_tags(tag, cls.MODULE, cls.SECTION, 'explain_this_iu')
+        tag, tag_next_level = ut.get_debug_tags(tag, cls.MODULE, cls.SECTION, 'get_this_iu_meaning')
         if not reg_list_for_iu:
             return []
         first_reg_val = reg_list_for_iu[0][1]

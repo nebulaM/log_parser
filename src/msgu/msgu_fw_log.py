@@ -7,7 +7,7 @@ from ..shared import dutil as ut
 class FWLog(cm.MSGULog):
     # name of this object
     SECTION = 'fw_log'
-    #DEFINITION_FILE_DIR = os.path.join(os.getcwd(), '..', '..', '..' 'msgux', 'pqi', 'src', 'msgu_log.h')
+    # DEFINITION_FILE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..','msgux', 'pqi', 'src', 'msgu_log.h')
     DEFINITION_FILE_DIR = os.path.join(ut.DumpArgvWorker().INCLUDE_DIR, 'doc', 'msgu', 'msgu_log.h')
     LOG_HEADER = '# MSGU FW Log from DQ location'
     LOG_ENDING = '# HQA Memory'
@@ -125,7 +125,7 @@ class FWLog(cm.MSGULog):
             else:           
                 trans_list_time.append(item_1)
                 trans_list_log.append(item_2)
-        #utils.list_print(trans_list)
+
         if self.log_start_idx is None or self.log_start_idx > len(trans_list_time):
             if self.log_start_idx is None:
                 no_log_start_idx_msg = tag + \
@@ -158,7 +158,7 @@ class FWLog(cm.MSGULog):
             fd = open(filename, 'w')
 
             fd.write('Decoded ' + self.MODULE + self.SECTION + \
-            'from crash dump ' + self.INPUT_DIR + ':\n')
+            'from dump file ' + self.INPUT_DIR + ':\n')
             self.write_result(fd, no_log_start_idx_msg, self.clk_freq, \
             sorted_trans_list_time, sorted_trans_list_log, standalone)
 
@@ -174,7 +174,7 @@ class FWLog(cm.MSGULog):
             fd.write(mhtml.get_fw_group_ending())
             fd.close()
 
-        # set vars read from crash dump back to none after finish
+        # set vars read from dump file back to none after finish
         self.log_start_idx = None
         self.clk_freq = None
 
