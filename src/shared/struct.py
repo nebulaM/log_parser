@@ -1,4 +1,4 @@
-''' Data structures for crash dump parser. '''
+''' Data structures for log dump parser. '''
 import collections
 
 class DefReg(object):
