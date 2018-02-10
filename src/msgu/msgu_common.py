@@ -14,10 +14,10 @@ class MSGULog(ut.XMLREToken):
     LUXOR = 'Luxor'
     WF = 'WILDFIRE'
 
-    # how many chars per line in crash dump msgu section
+    # how many chars per line in dump file msgu section
     LOG_LINE_LENGTH = 82
 
-    # how many byte per register value displayed on crash dump
+    # how many byte per register value displayed on dump file
     BYTE_PER_VAL = 4
     # how many register value per register address is dumped on a line
     VAL_PER_LINE = 8
@@ -28,15 +28,17 @@ class MSGULog(ut.XMLREToken):
     INPUT_DIR = ''
     OUTPUT_DIR = ''
     DEBUG_MODE = ''
+    WORKSPACE = ''
     out_filename = ''
 
     @classmethod
     def set_input_params(cls):
-        argv = ut.DumpArgvWorker()
+        argv = MSGU_DUMP_WORKER()
         argv.parse()
         cls.INPUT_DIR = argv.INPUT_DIR
         cls.OUTPUT_DIR =argv.OUTPUT_DIR
         cls.DEBUG_MODE = argv.DEBUG_MODE
+        cls.WORKSPACE  = argv.WORKSPACE
         cls.out_filename = ut.get_parsed_filename(cls.INPUT_DIR, cls.MODULE) + '.html'
         cls.out_filename = os.path.join(cls.OUTPUT_DIR, cls.out_filename)
 
@@ -73,7 +75,7 @@ class MSGULog(ut.XMLREToken):
 
             reg_list.extend(this_line_list)
         if cls.DEBUG_MODE is True:
-            print(tag + '[reg address] [reg value] after processing crash dump:')
+            print(tag + '[reg address] [reg value] after processing dump file:')
             addr_formater = '{:0%dx}' % (cls.BYTE_PER_VAL << 1)
             val_formater = '{:0%dx}' % (byte_per_reg << 1)
             for reg_addr, reg_val in reg_list:
@@ -97,3 +99,38 @@ class HQA_WORD(object):
     W_INTX = 'INTx'
     # default queue id for HQA, should be a negative number
     DEFAULT_ID = -1
+
+class _MSGU_DUMP_WORKER(ut.DumpArgvWorker):
+    '''@Override ut.DumpArgvWorker to parse sys argv for MSGU'''
+    WORKSPACE = ''
+
+    @classmethod
+    def _set_workspace(cls, in_dir):
+        ''' Set BC workspace, check this based on folder
+            @param in_dir: path to a bc workspace
+        '''
+        if in_dir != '':
+            if os.path.isdir(in_dir) and \
+            os.path.isdir(os.path.join(in_dir, 'msgux')):
+                cls.WORKSPACE = in_dir
+            else:
+                raise AssertionError('Error, [{}] is not a valid dir to a BC workspace because msgux folder is NOT under this folder.\n'.format(in_dir))
+
+    @classmethod
+    def _build(cls):
+        ''' @Override
+        '''
+        parser = ut.DumpArgvWorker._build()
+        parser.add_argument('-w', '--workspace', help='path to BaseCode workspace')
+        return parser
+
+    @classmethod
+    def parse(cls, build_cb=None):
+        ''' @Override
+        '''
+        if build_cb:
+            args = ut.DumpArgvWorker.parse(build_cb)
+        else:
+            args = ut.DumpArgvWorker.parse(cls._build)
+        cls._set_workspace(args.workspace)
+        return args
