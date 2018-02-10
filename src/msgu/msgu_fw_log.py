@@ -110,6 +110,23 @@ class FWLog(cm.MSGULog):
             print(tag + 'parser ends, no log for this section')
             return False
 
+        # Override def file dir if workspace is defined
+        if self.WORKSPACE != '':
+            self.DEFINITION_FILE_DIR = ''
+            header_file_count = 0
+            for root, dirs, files in os.walk(self.WORKSPACE):
+                for filename in files:
+                    if 'msgu_log.h' in filename:
+                        self.DEFINITION_FILE_DIR = os.path.join(root, filename)
+                        header_file_count += 1
+                        if header_file_count > 1:
+                            raise AssertionError('In workspace {}, found multiple msgu header file msgu_log.h'.format(self.WORKSPACE))
+            
+            if header_file_count is 0:
+                raise AssertionError('In workspace {}, header file msgu_log.h not found'.format(self.WORKSPACE))
+            
+                     
+
         definition_list = ut.create_def_list_from_logh(tag_next_level, self.DEFINITION_FILE_DIR, \
         self.LOG_ENTRY_PREFIX, self.DEBUG_MODE)
 
