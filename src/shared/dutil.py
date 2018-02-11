@@ -5,8 +5,10 @@ import argparse
 import re
 import ntpath
 import operator
+import itertools
 from datetime import datetime
 from random import randint
+from functools import reduce
 
 MODULE_NAME = 'dutil'
 def get_debug_tags(tag_upper_level, module, section, func_name):
@@ -224,13 +226,15 @@ def get_scsi_code_dict(tag, section, def_file_dir, verbose=False):
             scsi_code_dict[scsi_code] = scsi_name
     return scsi_code_dict
 
-def save_line_to_list(tag, header, ending, filename, line_length):
+def save_line_to_list(tag, header, ending, filename, line_length, debug = True, dump_file = None):
     ''' Save lines that are under a section from log to a list.
         @params tag: tag from caller
-        @params header: starting line belongs to this section 
+        @params header: starting line belongs to this section
         @params ending: last line belongs to this section
-        @params filename: path to input file
+        @params filename: path to input file. Not used if dump_file is not None.
         @params line_length: how long an expected line is under this section
+        @params debug: Optional debug info
+        @params dump_file: Optional opened input file, param filename not used if dump file is given
 		@return line_list: list of lines of reg_addr reg_val, can be empty
     '''
     tag, tag_next_level = get_debug_tags(tag, MODULE_NAME, None, 'save_line_to_list')
@@ -247,7 +251,11 @@ def save_line_to_list(tag, header, ending, filename, line_length):
     line_list = []
 
     # Get full dump_file so we can search magu fw log from it
-    lines = get_data_from_file(tag_next_level, filename)
+    if dump_file is not None:
+        print(tag + 'Use dump file from caller, input {} is ignored.'.format(filename))
+        lines = dump_file
+    else:
+        lines = get_data_from_file(tag_next_level, filename)
 
     # Line number starts from 1(can be set to 0)
     line_num = 1
@@ -273,8 +281,9 @@ def save_line_to_list(tag, header, ending, filename, line_length):
             line_num += 1
         elif line == ending:
             if flag_process_line is False:
-                print(tag + 'Warnning, section ending [' + ending + '] appears on line ', \
-                line_num, ' before section header [' + header + '], skip this ending')
+                if debug:
+                    print(tag + 'Warnning, section ending [' + ending + '] appears on line ', \
+                    line_num, ' before section header [' + header + '], skip this ending')
                 line_num += 1
             else:
                  # ending of desired section, set flag_process_line to False
@@ -755,6 +764,67 @@ def save_reg_hex_dump_to_html(reg_list, addr_offset, value_per_line, fd):
             fd.write(str_write)
             idx = 0
     fd.write('</div>\n</div>\n')
+
+def llen(mlist, dim):
+    ''' Return length of list in a dimension
+        @param list: a multi-dimension list, element in the list might be another list
+        @param dim: dimension of list
+        @note: only support at most one degree list of list.
+    '''
+    ret = list(map(lambda e: e[dim], mlist))
+    if ret:
+        if type(ret[0]) is list:
+            return len(reduce(lambda x, y : x + y, ret))
+        else:
+            return len(ret)
+    return 0
+
+def lfjoin(input_filename_list, output_filename):
+    ''' Concate large files in order
+        @param input_filename_list: list of path to files to be joined
+        @output output_filename: path to output files
+        @note: caller has to make sure the argvs are valid path to file
+    '''
+    with open(output_filename, 'w') as outfile:
+        for fname in input_filename_list:
+            with open(fname) as infile:
+                for line in infile:
+                    outfile.write(line)
+
+def find_unique_reg(reg_dump_dict):
+    unique_reg_addr_set = set()
+    max_num = len(reg_dump_dict)
+    for base_id in range(max_num):
+        if base_id in reg_dump_dict:
+            base_reg_dump_list = reg_dump_dict[base_id]
+            for curr_id in range(base_id + 1, max_num):
+                try:
+                    dump_reg_list = reg_dump_dict[curr_id]
+                    flag_fast_compare = True
+                    if len(dump_reg_list) == len(base_reg_dump_list):
+                        # if 2 lists have the same reg dump, only need to cmp values at the same index
+                        # O(n)
+                        for i in range(len(dump_reg_list)):
+                            if dump_reg_list[i][0] == base_reg_dump_list[i][0]:
+                                if dump_reg_list[i][1] != base_reg_dump_list[i][1]:
+                                    unique_reg_addr_set.add(base_reg_dump_list[i][0])
+                            else:
+                                print((tag + 'Warning, mismatched register address %d and %d on ID %d and ID %d' \
+                                % (dump_reg_list[i][0], base_reg_dump_list[i][0], curr_id, base_id)))
+                                flag_fast_compare = False
+                                break
+                    # fast_compare cannot be used due to a mismatch in [list length]/[reg address at a index],
+                    # most likely caused by incompleted dump on one or more PHY(s)
+                    # O(n2)
+                    if flag_fast_compare is False:
+                        # filter gives a list of '[reg_addr, reg_val1], [reg_addr, reg_val2]'
+                        # only interested in reg_addr, so either map to reg[0][0] or reg[1][0] 
+                        unique_reg_addr_set.update(map(lambda reg: reg[0][0], \
+                        filter(lambda x, y : x[0] == y[0] and x[1] != y[1], itertools.product(dump_reg_list, base_reg_dump_list))))
+                except KeyError:
+                    pass
+            del base_reg_dump_list
+    return unique_reg_addr_set
 
 class DumpArgvWorker(object):
     ''' Handle argv for register dump.

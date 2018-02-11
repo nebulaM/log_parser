@@ -1,27 +1,8 @@
-import os
 import src.msgu.msgu_common as cm
-from ..shared import dutil as ut
-
-HTML_LIB_DIR = os.path.join(ut.DumpArgvWorker.INCLUDE_DIR, 'lib', 'html')
-
-def get_stylesheet():
-    filename = os.path.join(HTML_LIB_DIR, 'bootstrap.min.css')
-    css = open(filename).read()
-    return ''.join(['<style>', css, '</style>'])
-
-def get_script():
-    filename = os.path.join(HTML_LIB_DIR, 'jquery.min.js')
-    jquery = open(filename).read()
-    filename = os.path.join(HTML_LIB_DIR, 'bootstrap.min.js')
-    bootstr = open(filename).read()
-    return ''.join(['<script>', jquery, '</script>', \
-                    '<script>', bootstr, '</script>'])
-
-def get_common_scripts():
-    return ''.join([get_stylesheet(), get_script()])
+from ..shared import html
 
 def get_hwa_standalone_header(input_filename):
-    css = get_stylesheet()
+    css = html.get_stylesheet()
     return '''<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -46,10 +27,10 @@ def get_hwa_standalone_header(input_filename):
     <body>
 
     <div class="container">
-    <a id="top_section"><p style="color:red;">Decoded MSGU log from crash dump:</p></a> 
+    <a id="top_section"><p style="color:red;">Decoded MSGU log from dump:</p></a> 
     <p style="color:red;">%s</p>
     <h3>MSGU HWA REG</h3>
-    <p>The following table contains decoded register dump from crash dump for MSGU HWA register section:</p>\n''' \
+    <p>The following table contains decoded register dump from dump for MSGU HWA register section:</p>\n''' \
     % (css, input_filename)
 
 def get_hwa_standalone_ending():
@@ -58,24 +39,7 @@ def get_hwa_standalone_ending():
 </body>
 </html>\n'''
 
-def get_hqa_hide_tbl_script(first_enabled_queue):
-    if first_enabled_queue < 0:
-        first_queue = 0
-    else:
-        first_queue = first_enabled_queue
-    return '''<script>
-    var lastId=%d;
-    function showHqa(id) {
-        if (lastId === id) {
-            return;
-        }
-        $(document.getElementById("Hqa_q"+lastId)).hide();
-        $(document.getElementById("Hqa_q"+id)).fadeIn();
-        lastId=id;
-    } 
-  </script>''' % (first_queue)
-
-def get_hqa_nav_tab(queue_list):
+def get_hqa_nav_tab(hide_tbl_fcn_name, queue_list):
     ib_admin = ''
     ib_oper = ''
     ob_admin = ''
@@ -84,7 +48,7 @@ def get_hqa_nav_tab(queue_list):
         oper_mode = ''
         error = ''
         color = 'green'
-        clickable = ' onclick="showHqa(%d)"' % (q.qid)
+        clickable = ' onclick="%s(%d)"' % (hide_tbl_fcn_name, q.qid)
         highlight_0 = '<b>'
         highlight_1 = '</b>'
         if q.is_bad_q is True:
@@ -142,10 +106,11 @@ def get_hqa_nav_tab(queue_list):
     </li>
   </ul>''' % (ib_admin, ib_oper, ob_admin, ob_oper)
 
+HQA_Q_TBL_NAME_PREFIX = 'hqa_q'
 def get_hqa_standalone_header(input_filename, queue_list, first_enabled_q):
-    common_scripts = get_common_scripts()
-    hqa_script = get_hqa_hide_tbl_script(first_enabled_q)
-    hqa_nav_tab = get_hqa_nav_tab(queue_list)
+    common_scripts = html.get_common_scripts()
+    hide_tbl_fcn_name, hqa_script = html.get_hide_tbl_script(HQA_Q_TBL_NAME_PREFIX, first_enabled_q)
+    hqa_nav_tab = get_hqa_nav_tab(hide_tbl_fcn_name, queue_list)
     return \
 ('''<!DOCTYPE html>
 <html lang="en">
@@ -171,7 +136,7 @@ def get_hqa_standalone_header(input_filename, queue_list, first_enabled_q):
 </style>
 <body>
   <div class="container">
-  <p style="color:red;">Decoded MSGU log from crash dump:</p> 
+  <p style="color:red;">Decoded MSGU log from dump:</p> 
   <p style="color:red;">%s</p>
   <h3 id="msgu_hqa_reg">MSGU HQA REG</h3>
   <p style="color:red;">Click on a tab to select a Q, <span style="color:green;"><b>Green Qs</b></span> are enabled, <span style="color:grey;"><b>GREY Qs</b></span> are disabled.</p>
@@ -193,13 +158,14 @@ def get_hqa_tbl_header(q, first_enabled_q):
         display = 'none'
     title = ''.join([q.q_mode, ' ', q.q_type, ' Queue'])
     return \
-('''  <div class="container" id="Hqa_q%d" style="display:%s">
-   <h2 align="center" style="color:orange">Queue %d (%s)</h2>\n''' % (q.qid, display, q.qid, title))
+('''  <div class="container" id="%s%d" style="display:%s">
+   <h2 align="center" style="color:orange">Queue %d (%s)</h2>\n''' % (HQA_Q_TBL_NAME_PREFIX, q.qid, display, q.qid, title))
+
 def get_hqa_tbl_ending():
     return '  </div>\n'
 
 def get_lba_lbb_standalone_header(input_filename):
-    css = get_stylesheet()
+    css = html.get_stylesheet()
     return '''<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -229,7 +195,7 @@ def get_lba_lbb_standalone_header(input_filename):
     <body>
 
     <div class="container">
-    <a id="top_section"><p style="color:red;">Decoded MSGU log from crash dump:</p></a> 
+    <a id="top_section"><p style="color:red;">Decoded MSGU log from dump:</p></a> 
     <p style="color:red;">%s</p>
     <h3>MSGU LBA and LBB MEM</h3>
     <p>The following IU(s) are decoded from LBA and LBB memory:</p>\n''' \
@@ -241,32 +207,10 @@ def get_lba_lbb_standalone_ending():
 </body>
 </html>\n'''
 
-def get_hide_section_script(section):
-    return \
-'''    <script>
-    var is_%(section)s_hide=false;
-    $(document).ready(function(){
-        $(document.getElementById("%(section)s_title")).click(function(){
-    	    if (is_%(section)s_hide===false){
-        	    $(document.getElementById("%(section)s_main")).hide(200);
-            } else {
-        	    $(document.getElementById("%(section)s_main")).show(200);
-            }
-            is_%(section)s_hide=!is_%(section)s_hide;
-        });
-    });
-    </script>''' % {'section': section}
-
-def get_hide_section_scripts(section_list):
-    scripts = ''
-    for section in section_list:
-        scripts = ''.join([scripts, get_hide_section_script(section)])
-    return scripts
-
 def get_top_level_header(input_filename):
-    common_scripts = get_common_scripts()
+    common_scripts = html.get_common_scripts()
     sections = ['msgu_fw_log', 'msgu_hwa_reg', 'msgu_hqa_reg', 'msgu_lba_lbb_mem']
-    hide_sec_scripts = get_hide_section_scripts(sections)
+    hide_sec_scripts = html.get_hide_section_scripts(sections)
     click_link = ''
     for section in sections:
         template = '<p style="color:green;">Click to get <a href="#{}">{}</a></p>'\
@@ -276,7 +220,7 @@ def get_top_level_header(input_filename):
 '''<!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>MSGU Crash Dump Decode</title>
+  <title>MSGU Dump Decode</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   %s
@@ -315,19 +259,14 @@ def get_top_level_header(input_filename):
 </style>
 <body>
 <div class="container">
-<a id="top_section"><p style="color:red;">Decoded MSGU log from crash dump:</p></a> 
+<a id="top_section"><p style="color:red;">Decoded MSGU log from dump:</p></a> 
 <p style="color:red;">%s</p>
 %s
 <p style="color:red;">Internet Explore may not correctly display the result, consider using a modern browser, such as Microsoft Edge or Google Chrome.</p>
 </div>''' % (common_scripts, hide_sec_scripts, input_filename, click_link)
 
 def get_top_level_ending():
-     return \
-'''<footer>
- <p class="copyright">Copyright &copy; 2017 Microsemi Corporation. All rights reserved.</p>
-</footer>
-</body>
-</html>'''
+     return html.get_top_level_ending()
 
 def get_fw_group_header():
     return \
@@ -360,8 +299,8 @@ def get_hwa_group_ending():
   </div>\n'''
 
 def get_hqa_group_header(queue_list, first_enabled_q):
-    hqa_hide_tbl_script = get_hqa_hide_tbl_script(first_enabled_q)
-    hqa_nav_tab = get_hqa_nav_tab(queue_list)
+    hqa_hide_tbl_fcn_name, hqa_hide_tbl_script = html.get_hide_tbl_script(HQA_Q_TBL_NAME_PREFIX, first_enabled_q)
+    hqa_nav_tab = get_hqa_nav_tab(hqa_hide_tbl_fcn_name, queue_list)
     return \
 '''  %s
   <div class="container" id="msgu_hqa_reg">
