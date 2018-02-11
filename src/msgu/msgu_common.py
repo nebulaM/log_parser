@@ -35,8 +35,8 @@ class MSGULog(ut.XMLREToken):
     def set_input_params(cls):
         argv = _MSGU_DUMP_WORKER()
         argv.parse()
-        cls.INPUT_DIR = argv.INPUT_DIR
-        cls.OUTPUT_DIR =argv.OUTPUT_DIR
+        cls.INPUT_DIR  = argv.INPUT_DIR
+        cls.OUTPUT_DIR = argv.OUTPUT_DIR
         cls.DEBUG_MODE = argv.DEBUG_MODE
         cls.WORKSPACE  = argv.WORKSPACE
         cls.out_filename = ut.get_parsed_filename(cls.INPUT_DIR, cls.MODULE) + '.html'
@@ -109,7 +109,7 @@ class _MSGU_DUMP_WORKER(ut.DumpArgvWorker):
         ''' Set BC workspace, check this based on folder
             @param in_dir: path to a bc workspace
         '''
-        if in_dir != '':
+        if in_dir is not None and in_dir != '':
             if os.path.isdir(in_dir) and \
             os.path.isdir(os.path.join(in_dir, 'msgux')):
                 cls.WORKSPACE = in_dir
