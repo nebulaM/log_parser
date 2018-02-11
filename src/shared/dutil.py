@@ -250,7 +250,7 @@ def save_line_to_list(tag, header, ending, filename, line_length, debug = True, 
 
     line_list = []
 
-    # Get full dump_file so we can search magu fw log from it
+    # Use dump_file from caller if exist, otherwise read from filename
     if dump_file is not None:
         print(tag + 'Use dump file from caller, input {} is ignored.'.format(filename))
         lines = dump_file
@@ -667,6 +667,7 @@ def save_decoded_reg_dict_to_html_table(reg_dict, fd, debug=False):
     fd.write('    <table class="table table-bordered">\n        <thead>\n')
     fd.write('        <tr>\n\t\t\t<th>Reg Addr</th>\n\t\t\t<th>Reg Name</th>\n\t\t\t<th>Reg Value</th>\n\t\t\t<th>Decoding</th>\n')
     fd.write('        </tr>\n        </thead>\n        <tbody>\n')
+
     if debug is False:
         color_list = ['#86c4f3', '#efbd58', '#97e076', '#e5d899', '#dce0e5']
         last_rand_color_idx = 0
@@ -769,7 +770,7 @@ def llen(mlist, dim):
     ''' Return length of list in a dimension
         @param list: a multi-dimension list, element in the list might be another list
         @param dim: dimension of list
-        @note: only support at most one degree list of list.
+        @note: Support at most one degree of list of list.
     '''
     ret = list(map(lambda e: e[dim], mlist))
     if ret:
@@ -780,7 +781,7 @@ def llen(mlist, dim):
     return 0
 
 def lfjoin(input_filename_list, output_filename):
-    ''' Concate large files in order
+    ''' Join large files in order
         @param input_filename_list: list of path to files to be joined
         @output output_filename: path to output files
         @note: caller has to make sure the argvs are valid path to file
@@ -791,7 +792,18 @@ def lfjoin(input_filename_list, output_filename):
                 for line in infile:
                     outfile.write(line)
 
-def find_unique_reg(reg_dump_dict):
+def find_unique_reg(tag, reg_dump_dict):
+    ''' Find unique register in register dump dict
+        @param tag
+        @param reg_dump_dict: dict of key reg addr and val reg val
+        @return unique_reg_addr_set: set of unique reg addr
+        @note: this function is called if there are multiple register sections
+               for the same structure. For example, config for PHYs are stored
+               in different register locations for different PHYs. We may want
+               to find out the unqiue config(unique reg val) among different PHYs, 
+               and ignore the same config(same reg val) by calling this function.
+    '''
+    tag = get_debug_tags(tag, MODULE_NAME, None, 'find_unique_reg')[0]
     unique_reg_addr_set = set()
     max_num = len(reg_dump_dict)
     for base_id in range(max_num):

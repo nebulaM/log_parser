@@ -235,7 +235,7 @@ class OSSPLog(ut.XMLREToken):
             unique_reg_addr_set = set()
             # if we have more than one OSSP for this register dump, find out reg with unique value
             if ossp_count > 0:
-                unique_reg_addr_set = ut.find_unique_reg(ossp_reg_dump_dict)
+                unique_reg_addr_set = ut.find_unique_reg(tag, ossp_reg_dump_dict)
             else:
                 print(tag + 'Warning, no OSSP found for this register dump''')
             common_reg_saved_flag = False
@@ -363,7 +363,7 @@ class OSSPLog(ut.XMLREToken):
         unique_reg_addr_set = set()
         # if we have more than one PHY, find out reg with unique value
         if total_phy_count > 0:
-            unique_reg_addr_set = ut.find_unique_reg(phy_reg_dump_dict)
+            unique_reg_addr_set = ut.find_unique_reg(tag, phy_reg_dump_dict)
         else:
             print(tag + 'Warning, no PHY found''')
         common_reg_list = []

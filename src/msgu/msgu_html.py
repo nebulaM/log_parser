@@ -27,10 +27,10 @@ def get_hwa_standalone_header(input_filename):
     <body>
 
     <div class="container">
-    <a id="top_section"><p style="color:red;">Decoded MSGU log from dump:</p></a> 
+    <a id="top_section"><p style="color:red;">Decoded MSGU log from dump file:</p></a> 
     <p style="color:red;">%s</p>
     <h3>MSGU HWA REG</h3>
-    <p>The following table contains decoded register dump from dump for MSGU HWA register section:</p>\n''' \
+    <p>The following table contains decoded register dump from dump file for MSGU HWA register section:</p>\n''' \
     % (css, input_filename)
 
 def get_hwa_standalone_ending():
@@ -136,7 +136,7 @@ def get_hqa_standalone_header(input_filename, queue_list, first_enabled_q):
 </style>
 <body>
   <div class="container">
-  <p style="color:red;">Decoded MSGU log from dump:</p> 
+  <p style="color:red;">Decoded MSGU log from dump file:</p> 
   <p style="color:red;">%s</p>
   <h3 id="msgu_hqa_reg">MSGU HQA REG</h3>
   <p style="color:red;">Click on a tab to select a Q, <span style="color:green;"><b>Green Qs</b></span> are enabled, <span style="color:grey;"><b>GREY Qs</b></span> are disabled.</p>
@@ -195,7 +195,7 @@ def get_lba_lbb_standalone_header(input_filename):
     <body>
 
     <div class="container">
-    <a id="top_section"><p style="color:red;">Decoded MSGU log from dump:</p></a> 
+    <a id="top_section"><p style="color:red;">Decoded MSGU log from dump file:</p></a> 
     <p style="color:red;">%s</p>
     <h3>MSGU LBA and LBB MEM</h3>
     <p>The following IU(s) are decoded from LBA and LBB memory:</p>\n''' \
@@ -259,7 +259,7 @@ def get_top_level_header(input_filename):
 </style>
 <body>
 <div class="container">
-<a id="top_section"><p style="color:red;">Decoded MSGU log from dump:</p></a> 
+<a id="top_section"><p style="color:red;">Decoded MSGU log from dump file:</p></a> 
 <p style="color:red;">%s</p>
 %s
 <p style="color:red;">Internet Explore may not correctly display the result, consider using a modern browser, such as Microsoft Edge or Google Chrome.</p>

@@ -167,7 +167,7 @@ class LBALBBLog(cm.MSGULog):
         useful_regs_per_iu_buf = cls.IU_SIZE // cls.BYTE_PER_REG
         common_iu_header_length_in_byte = cls.IU_COMMON_HEADER_SIZE
         idx = 0
-        # loop through dump list and find out 
+        # loop through dump file list and find out 
         # the registers belong to this spanning iu
         # the result is saved in reg_addr_val_for_this_iu
         while idx < len(reg_list):
