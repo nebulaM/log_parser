@@ -33,7 +33,7 @@ class MSGULog(ut.XMLREToken):
 
     @classmethod
     def set_input_params(cls):
-        argv = MSGU_DUMP_WORKER()
+        argv = _MSGU_DUMP_WORKER()
         argv.parse()
         cls.INPUT_DIR = argv.INPUT_DIR
         cls.OUTPUT_DIR =argv.OUTPUT_DIR
