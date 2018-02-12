@@ -78,7 +78,7 @@ def get_top_level_header(input_filename, section_list, per_phy_section_list, oss
 
     # register section not per PHY
     if section_list:
-        section_s_list = map(lambda x: _get_section_name_s(x), section_list)
+        section_s_list = list(map(lambda x: _get_section_name_s(x), section_list))
         hide_sec_scripts = html.get_hide_section_scripts(section_s_list)
         for section, section_s in zip(section_list, section_s_list):
             template = '<p style="color:green;">Click to get <a href="#{}">{}</a></p>'\
@@ -90,7 +90,7 @@ def get_top_level_header(input_filename, section_list, per_phy_section_list, oss
             del hide_tbl_fcn_name
     # register section per PHY
     if per_phy_section_list:
-            per_phy_section_s_list = map(lambda x: _get_section_name_s(x), per_phy_section_list)
+            per_phy_section_s_list = list(map(lambda x: _get_section_name_s(x), per_phy_section_list))
             hide_sec_scripts = ''.join([hide_sec_scripts, html.get_hide_section_scripts(per_phy_section_s_list)])
             for section, section_s in zip(per_phy_section_list, per_phy_section_s_list):
                 template = '<p style="color:green;">Click to get <a href="#{}">{}</a></p>'\
