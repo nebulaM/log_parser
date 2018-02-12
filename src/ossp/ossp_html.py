@@ -86,7 +86,7 @@ def get_top_level_header(input_filename, section_list, per_phy_section_list, oss
             click_link = ''.join([click_link,template])
         if ossp_phy_list:
             hide_tbl_fcn_name, ossp_hide_tbl_script = _get_hide_tbl_script(PER_OSSP_TBL_PREFIX, section_s_list, 0)
-            ossp_nav_tab = _get_ossp_nav_tab(hide_tbl_fcn_name, map(lambda x: x[0], ossp_phy_list))
+            ossp_nav_tab = _get_ossp_nav_tab(hide_tbl_fcn_name, list(map(lambda x: x[0], ossp_phy_list)))
             del hide_tbl_fcn_name
     # register section per PHY
     if per_phy_section_list:
