@@ -755,7 +755,7 @@ class LBALBBLog(cm.MSGULog):
                 for bit_pos in reg.bit_dict.keys():
                     bit_name, bit_val, bit_meaning = reg.bit_dict[bit_pos]
                     bit_val_hex = hex(int(bit_val, 2))
-                    bit_val = add_mark_to_word(bit_val, '_', 4)
+                    bit_val = ut.add_mark_to_word(bit_val, '_', 4)
                     str_write = '    <p style="font-size:14px;color:#679c3e"><b>%s [%s] %s: %s</b></p>\n' % \
                     (bit_val_hex, bit_val, bit_name, bit_meaning)
                     fd.write(str_write)
