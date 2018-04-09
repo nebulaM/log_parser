@@ -243,9 +243,9 @@ class OSSPLog(ut.XMLREToken):
                 try:
                     dump_reg_list = ossp_reg_dump_dict[id]
                     if common_reg_saved_flag is False:
-                        common_reg_list = filter(lambda reg: reg[0] not in unique_reg_addr_set, dump_reg_list)
+                        common_reg_list = list(filter(lambda reg: reg[0] not in unique_reg_addr_set, dump_reg_list))
                         common_reg_saved_flag = True
-                    ossp_reg_dump_dict[id] = filter(lambda reg: reg[0] in unique_reg_addr_set, dump_reg_list)
+                    ossp_reg_dump_dict[id] = list(filter(lambda reg: reg[0] in unique_reg_addr_set, dump_reg_list))
                 except KeyError:
                     pass
         
@@ -372,9 +372,9 @@ class OSSPLog(ut.XMLREToken):
             try:
                 dump_reg_list = phy_reg_dump_dict[phy_id]
                 if common_reg_saved_flag is False:
-                    common_reg_list = filter(lambda reg: reg[0] not in unique_reg_addr_set, dump_reg_list)
+                    common_reg_list = list(filter(lambda reg: reg[0] not in unique_reg_addr_set, dump_reg_list))
                     common_reg_saved_flag = True
-                phy_reg_dump_dict[phy_id] = filter(lambda reg: reg[0] in unique_reg_addr_set, dump_reg_list)
+                phy_reg_dump_dict[phy_id] = list(filter(lambda reg: reg[0] in unique_reg_addr_set, dump_reg_list))
             except KeyError:
                 pass
         if ossp_phy_list:

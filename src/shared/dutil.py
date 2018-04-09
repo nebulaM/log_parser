@@ -829,10 +829,12 @@ def find_unique_reg(tag, reg_dump_dict):
                     # most likely caused by incompleted dump on one or more PHY(s)
                     # O(n2)
                     if flag_fast_compare is False:
-                        # filter gives a list of '[reg_addr, reg_val1], [reg_addr, reg_val2]'
-                        # only interested in reg_addr, so either map to reg[0][0] or reg[1][0] 
-                        unique_reg_addr_set.update(map(lambda reg: reg[0][0], \
-                        filter(lambda x, y : x[0] == y[0] and x[1] != y[1], itertools.product(dump_reg_list, base_reg_dump_list))))
+                        temp_unique_list = [] 
+                        for item in itertools.product(dump_reg_list, base_reg_dump_list):
+                            # item[0] and item[1] are two pairs of [reg_addr, reg_val]
+                            if item[0][0] == item[1][0] and item[0][1] != item[1][1]:
+                                temp_unique_list.append(item[0][0])
+                        unique_reg_addr_set.update(temp_unique_list)
                 except KeyError:
                     pass
             del base_reg_dump_list
